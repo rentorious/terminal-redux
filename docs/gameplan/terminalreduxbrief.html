@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terminal Redux — Market & Pain-Point Brief</title>
+<style>
+:root{
+  color-scheme:light;
+  --plane:#f9f9f7; --surface:#fcfcfb; --surface-2:#f4f3f0;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --shadow:0 1px 2px rgba(11,11,11,.04),0 6px 18px rgba(11,11,11,.05);
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --plane:#0d0d0d; --surface:#1a1a19; --surface-2:#222221;
+  --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--plane); color:var(--ink);
+  font:15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px 96px}
+
+/* ---------- header ---------- */
+header{padding:44px 0 26px;border-bottom:1px solid var(--border);margin-bottom:26px}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-size:clamp(30px,4.2vw,44px);line-height:1.1;margin:10px 0 12px;letter-spacing:-0.02em;font-weight:650}
+.sub{color:var(--ink-2);max-width:74ch;font-size:16px;margin:0}
+.meta{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap}
+.pill{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);color:var(--ink-2);background:var(--surface)}
+#themeToggle{position:fixed;top:16px;right:16px;z-index:60;background:var(--surface);color:var(--ink-2);
+  border:1px solid var(--border);border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;cursor:pointer;box-shadow:var(--shadow)}
+#themeToggle:hover{color:var(--ink)}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--plane) 92%,transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--border);margin:0 -24px 30px;padding:0 24px}
+.navrow{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.navrow::-webkit-scrollbar{display:none}
+.navrow button{background:none;border:0;border-bottom:2px solid transparent;color:var(--ink-2);
+  font:inherit;font-size:14px;padding:13px 13px;cursor:pointer;white-space:nowrap}
+.navrow button:hover{color:var(--ink)}
+.navrow button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--s1);font-weight:600}
+
+section[role="tabpanel"]{display:none;animation:fade .18s ease}
+section[role="tabpanel"].on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+h2{font-size:22px;letter-spacing:-0.01em;margin:34px 0 6px;font-weight:640}
+h2:first-child{margin-top:4px}
+h3{font-size:16px;margin:26px 0 8px;font-weight:640}
+p{max-width:82ch}
+.lede{font-size:16.5px;color:var(--ink-2);max-width:80ch}
+small.note{display:block;color:var(--muted);font-size:12.5px;margin-top:8px;max-width:82ch}
+
+/* ---------- cards & tiles ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(184px,1fr));gap:12px;margin:20px 0 8px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 16px;box-shadow:var(--shadow)}
+.tile .lab{font-size:12.5px;color:var(--ink-2);line-height:1.35;min-height:2.7em}
+.tile .val{font-size:29px;font-weight:660;letter-spacing:-0.02em;margin:8px 0 2px;line-height:1}
+.tile .cap{font-size:11.5px;color:var(--muted)}
+.tile.accent{border-color:color-mix(in srgb,var(--s1) 40%,var(--border))}
+.hero{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 24px;box-shadow:var(--shadow);margin:22px 0}
+.hero .n{font-size:clamp(44px,6vw,60px);font-weight:680;letter-spacing:-0.03em;line-height:1;color:var(--ink)}
+.hero .t{color:var(--ink-2);max-width:70ch;margin-top:10px}
+
+/* ---------- callouts ---------- */
+.callout{border-left:3px solid var(--s1);background:var(--surface);border-radius:0 10px 10px 0;
+  padding:14px 18px;margin:18px 0;border-top:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.callout.risk{border-left-color:var(--critical)}
+.callout.win{border-left-color:var(--good)}
+.callout .h{font-weight:640;font-size:13.5px;margin-bottom:5px;display:flex;align-items:center;gap:7px}
+.callout p{margin:0;font-size:14.5px;color:var(--ink-2)}
+.dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
+blockquote{margin:14px 0;padding:2px 0 2px 16px;border-left:2px solid var(--axis);color:var(--ink-2);font-size:14.5px;max-width:80ch}
+blockquote cite{display:block;font-style:normal;font-size:12.5px;color:var(--muted);margin-top:6px}
+
+/* ---------- tables ---------- */
+.tblwrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);margin:18px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:640px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-weight:620;color:var(--ink-2);font-size:12px;letter-spacing:.04em;text-transform:uppercase;background:var(--surface-2);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{display:inline-block;margin-bottom:5px;font-size:11px;padding:2px 7px;border-radius:5px;border:1px solid var(--border);color:var(--ink-2);white-space:nowrap}
+.tag.old{border-color:color-mix(in srgb,var(--critical) 45%,var(--border));color:var(--critical)}
+.tag.mid{border-color:color-mix(in srgb,var(--warn) 55%,var(--border))}
+.tag.new{border-color:color-mix(in srgb,var(--good) 45%,var(--border));color:var(--good)}
+
+/* ---------- chart ---------- */
+.chart{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px 16px;box-shadow:var(--shadow);margin:20px 0}
+.chart .ctitle{font-weight:640;font-size:15px;margin-bottom:2px}
+.chart .csub{font-size:13px;color:var(--ink-2);margin-bottom:16px;max-width:78ch}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.swatch{width:11px;height:11px;border-radius:3px;display:inline-block}
+.brow{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center;margin-bottom:9px}
+.blabel{font-size:12.5px;color:var(--ink-2);text-align:right}
+.bstack{display:flex;flex-direction:column;gap:2px}
+.bar{height:11px;border-radius:0 4px 4px 0;position:relative;min-width:2px;transition:filter .12s}
+.bar:hover{filter:brightness(1.12)}
+.bval{position:absolute;right:-38px;top:50%;transform:translateY(-50%);font-size:11.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.axiswrap{display:grid;grid-template-columns:150px 1fr;gap:12px;margin-top:14px}
+.axis{grid-column:2;width:88%;border-top:1px solid var(--axis);display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding-top:5px}
+
+/* stacked cost bar */
+.stack{display:flex;height:34px;border-radius:6px;overflow:hidden;gap:2px;margin:10px 0 6px}
+.seg{display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;color:#fff;min-width:26px}
+.stackkey{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:8px 20px;font-size:12.5px;color:var(--ink-2);margin-top:12px}
+.stackkey span{display:flex;align-items:baseline;gap:7px}
+.stackkey .swatch{flex:0 0 11px;position:relative;top:1px}
+.stackkey .kn{color:var(--ink-2)}
+.stackkey .kv{color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* ---------- wedges ---------- */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 4px;align-items:center}
+.filters .flab{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+.chip{background:var(--surface);border:1px solid var(--border);color:var(--ink-2);border-radius:999px;
+  padding:6px 13px;font:inherit;font-size:13px;cursor:pointer}
+.chip:hover{color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--plane);border-color:var(--ink)}
+.wedge{background:var(--surface);border:1px solid var(--border);border-radius:13px;margin:12px 0;box-shadow:var(--shadow);overflow:hidden}
+.wedge>summary{cursor:pointer;list-style:none;padding:16px 20px;display:grid;
+  grid-template-columns:44px 1fr auto;gap:14px;align-items:start}
+.wedge>summary::-webkit-details-marker{display:none}
+.wedge>summary:hover{background:var(--surface-2)}
+.wid{font-size:13px;font-weight:680;color:var(--plane);background:var(--ink);border-radius:8px;
+  width:38px;height:30px;display:flex;align-items:center;justify-content:center;letter-spacing:-.01em}
+.wtitle{display:block;font-weight:640;font-size:15.5px;letter-spacing:-.01em}
+.wclaim{display:block;font-size:13.5px;color:var(--ink-2);margin-top:3px}
+.tier{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--border);color:var(--ink-2);white-space:nowrap}
+.tier.t1{border-color:color-mix(in srgb,var(--s1) 50%,var(--border));color:var(--s1)}
+.tier.t2{border-color:color-mix(in srgb,var(--s2) 50%,var(--border));color:var(--s2)}
+.tier.t3{border-color:var(--border)}
+.wbody{padding:2px 20px 20px 78px;border-top:1px solid var(--grid);font-size:14.5px;color:var(--ink-2)}
+.wbody p{margin:12px 0}
+.wbody .ev{font-size:12.5px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px dashed var(--grid)}
+ul.tight{margin:10px 0;padding-left:20px}
+ul.tight li{margin:5px 0;max-width:80ch}
+.no{color:var(--ink-2)}
+.no li{margin:9px 0}
+
+/* ---------- misc ---------- */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin:18px 0}
+.srcs{font-size:13px;color:var(--ink-2)}
+.srcs a{color:var(--s1);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--s1) 30%,transparent)}
+.srcs a:hover{border-bottom-color:var(--s1)}
+a{color:var(--s1)}
+footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px}
+@media (max-width:640px){
+  .brow{grid-template-columns:96px 1fr}
+  .axiswrap{grid-template-columns:96px 1fr}
+  .wedge>summary{grid-template-columns:38px 1fr;gap:10px}
+  .wedge>summary .tier{grid-column:2}
+  .wbody{padding-left:20px}
+}
+</style>
+</head>
+<body>
+<button id="themeToggle" type="button">Dark</button>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Terminal Redux · Research brief</div>
+  <h1>Where a better hospitality POS actually fits in Serbia</h1>
+  <p class="sub">Six parallel research passes across global review corpora, staff forums, Serbian regulation, competitor pricing and the Serbian operating environment — turned into a ranked list of places to attack.</p>
+  <div class="meta">
+    <span class="pill">20 August 2026</span>
+    <span class="pill">Category: restaurant POS / RMS</span>
+    <span class="pill">Scope: Serbia, cafés · bars · restaurants</span>
+  </div>
+</header>
+
+<nav>
+  <div class="navrow" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="t-thesis">Thesis</button>
+    <button role="tab" aria-selected="false" data-tab="t-pain">Pain points</button>
+    <button role="tab" aria-selected="false" data-tab="t-serbia">Serbia</button>
+    <button role="tab" aria-selected="false" data-tab="t-comp">Competitors</button>
+    <button role="tab" aria-selected="false" data-tab="t-wedges">Opportunity map</button>
+    <button role="tab" aria-selected="false" data-tab="t-money">Money</button>
+    <button role="tab" aria-selected="false" data-tab="t-open">Open items</button>
+  </div>
+</nav>
+
+<!-- ============ THESIS ============ -->
+<section role="tabpanel" id="t-thesis" class="on">
+  <p class="lede">The category is <strong>restaurant POS / restaurant management systems</strong> — six sub-markets bundled together: point of sale, table &amp; floor management, kitchen display, back-of-house inventory and recipe costing, workforce, and delivery-aggregator plumbing. In Serbia the whole thing is called <em>program za ugostiteljstvo</em>, and it is legally wrapped in <strong>ESIR + L-PFR</strong> certification.</p>
+
+  <div class="hero">
+    <div class="n">0</div>
+    <p class="t">International POS majors present in Serbia. Toast, Square, Lightspeed, TouchBistro, Clover, Storyous/Teya, iiko/Syrve, r_keeper — none are ESIR-certified, and Square isn't available in the country at all. ESIR certification is a low bar to clear and a wall they haven't bothered to climb.</p>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><div class="lab">Approved ESIR/L-PFR elements in the state register</div><div class="val">~932</div><div class="cap">≈600 ESIR + ≈300 L-PFR · +20/month</div></div>
+    <div class="tile"><div class="lab">Serbian hospitality software TAM, recurring</div><div class="val">€9–21M</div><div class="cap">25–30k outlets × €30–60/mo · estimate</div></div>
+    <div class="tile"><div class="lab">Entry price anchor set by the best local competitor</div><div class="val">€34</div><div class="cap">Cheers, per month ex-VAT · realised ARPU €50–75</div></div>
+    <div class="tile"><div class="lab">Fiscally inspected venues temporarily closed, 2024</div><div class="val">57.9%</div><div class="cap">2,654 of 4,586 · hospitality = 57.2% of violators</div></div>
+    <div class="tile"><div class="lab">Trained hospitality staff leaving Serbia each summer</div><div class="val">5–10k</div><div class="cap">Croatia issued 24,278 permits to Serbs in 2025</div></div>
+  </div>
+
+  <h2>The six facts that should shape everything</h2>
+
+  <div class="callout win">
+    <div class="h"><span class="dot" style="background:var(--good)"></span>1 · You are not competing with Toast</div>
+    <p>You are competing with a 2004 Windows codebase, an Adobe AIR tablet app, and a van. The international tier is legally excluded. Local product quality is genuinely low — but local <em>service</em> quality (a phone number someone answers, a technician who drives out) is the real moat you have to match.</p>
+  </div>
+
+  <div class="callout risk">
+    <div class="h"><span class="dot" style="background:var(--critical)"></span>2 · Serbia alone doesn't support a large company</div>
+    <p>~€9–21M/yr of software ARR for the entire country. Plan for BiH / Montenegro / North Macedonia / Croatia from the schema outwards, or for a payments and data layer, or both. The same IPS-style instant rails and PSD2-equivalent regimes exist across the Western Balkans.</p>
+  </div>
+
+  <div class="callout">
+    <div class="h"><span class="dot" style="background:var(--s1)"></span>3 · Sell closure risk, not analytics</div>
+    <p>Owners price a 57.9% chance of temporary closure on inspection, fines of 30,000–2,000,000 RSD, and fire-safety closures of 15 days with no suspensive appeal. They do not yet price dashboards. A 15-day closure on a Belgrade terrace in July is a five-figure-euro event; the software is a rounding error against it.</p>
+  </div>
+
+  <div class="callout risk">
+    <div class="h"><span class="dot" style="background:var(--critical)"></span>4 · The grey economy is a segmentation decision, not an objection</div>
+    <p>The Foreign Investors Council puts it at <strong>40–50% of the hospitality sector</strong>. Note the asymmetry: the owner benefits from unrecorded turnover, the waiter benefits from a different leak. Owners will pay to stop <em>staff</em> leakage; they won't pay to stop their own. Sell staff-facing control, keep the fiscal path un-gameable, target chains, investor-backed venues and the ~7,000 new F&amp;B registrations a year.</p>
+  </div>
+
+  <div class="callout win">
+    <div class="h"><span class="dot" style="background:var(--good)"></span>5 · The wedge isn't better reports — it's zero-effort data capture</div>
+    <p>Every inventory module in the global market dies of setup cost. Serbia hands you two mandatory, structured, API-accessible rails no foreign vendor can touch: fiscal receipts going out, and supplier invoices arriving as UBL 2.1 XML through SEF. Build the normativ system so it fills itself.</p>
+  </div>
+
+  <div class="callout">
+    <div class="h"><span class="dot" style="background:var(--s1)"></span>6 · Own both sides of every ratio</div>
+    <p>Labour % breaks because scheduling and POS are separate systems. Food cost % breaks because invoices and sales are separate. Aggregator margin breaks because orders and payouts are separate. One system, one ledger, gets every ratio right for free.</p>
+  </div>
+
+  <small class="note">Evidence health: Reddit and Quora were unreachable during research, so first-person server/bartender voice comes from Square and Toast community forums and role-attributed reviews instead. Serbian social media was also unreachable. Twelve items need primary verification before you commit engineering or capital — see the Open items tab.</small>
+</section>
+
+<!-- ============ PAIN POINTS ============ -->
+<section role="tabpanel" id="t-pain">
+  <p class="lede">Sorted by evidence strength across ~3,500 Capterra reviews, G2, Software Advice, BBB complaint dockets, vendor community forums, and one keyword study of 11,389 reviews.</p>
+
+  <div class="chart">
+    <div class="ctitle">Support is the category's universal failure</div>
+    <div class="csub">Customer-service subscore sits below the overall score for nine of ten major products. Toast's rating distribution is bimodal — 325 five-star against 55 one-star with only 16 two-star — which is the signature of a product that works fine until a billing dispute, an unresolvable ticket or an attempted cancellation, then collapses to 1.</div>
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--s1)"></i>Overall rating</span>
+      <span><i class="swatch" style="background:var(--s2)"></i>Customer service subscore</span>
+    </div>
+    <div id="ratingChart"></div>
+    <div class="axiswrap"><div class="axis"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div></div>
+    <small class="note">Capterra, fetched August 2026. Review counts: Toast 554, Clover 577, Epos Now 727, Lightspeed 215, SpotOn 371, TouchBistro 413, Revel 323, Lavu 259, Square 54, Simphony 26.</small>
+  </div>
+
+  <div class="callout">
+    <div class="h"><span class="dot" style="background:var(--s1)"></span>The category's own verdict on itself</div>
+    <p><strong>83% of operators believe technology provides competitive advantage. Only 28% say tech investments have actually improved profitability.</strong> A 55-point gap, from the National Restaurant Association's 2025 State of the Industry.</p>
+  </div>
+
+  <h2>The unifying diagnosis</h2>
+  <p class="lede">The software models the <strong>accounting entity</strong> — the check — instead of the <strong>physical reality</strong>: people, chairs, plates, time. Every workaround staff invent is an attempt to bridge that gap.</p>
+
+  <h3>Merging two tables is not a feature — staff invent a fake SKU</h3>
+  <blockquote>"At this time, we don't have a feature that will group tables together like that… make a $0 'table occupied' item and when you have to combine the physical tables, ring up the table occupied item on one of the tables."
+  <cite>Square's own community moderator, answering an operator with 2-tops that push together</cite></blockquote>
+  <p>A phantom menu item whose only purpose is to encode a fact about furniture. It pollutes item-level sales data permanently, and every new hire has to be told about it verbally.</p>
+
+  <h3>Guests move; the data model doesn't</h3>
+  <blockquote>"Especially so if there are tables outside and it starts to rain, then they move inside to a different table number and are all sitting in a different seating configuration."
+  <cite>Square feature request; the only workaround offered was "bill them out before they move." Drag-and-drop seat moving shipped mid-2026.</cite></blockquote>
+  <p><strong>For a Belgrade terrace this is not an edge case. It is a weather event that happens weekly.</strong></p>
+
+  <h3>Transfers cost taps and hidden permissions</h3>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Task</th><th class="num">Steps (per Toast's own docs)</th></tr></thead>
+    <tbody>
+      <tr><td>Move check to another table</td><td class="num">3</td></tr>
+      <tr><td>Transfer check to another server</td><td class="num">4</td></tr>
+      <tr><td><strong>Transfer one item to a different check</strong></td><td class="num"><strong>5</strong></td></tr>
+      <tr><td>Move a payment to a different check</td><td class="num">6</td></tr>
+      <tr><td>Assign servers to tables</td><td class="num">4+ per server</td></tr>
+    </tbody>
+  </table></div>
+  <p>The transfer also requires five separate permission flags — which the server discovers are missing mid-shift, with a guest waiting. And step 3 of the item transfer is <em>"Select Look Up Check, then enter the check number"</em>: <strong>the server must know a number, not point at a table.</strong></p>
+
+  <h3>Splitting is the most-cited failure in the entire category</h3>
+  <blockquote>"Check splitting is the most laborious I have ever experienced."<cite>Chef/Owner, Lightspeed Restaurant</cite></blockquote>
+  <blockquote>"Split bills require your staff to have a post-graduate diploma with 10+ years of practice, super not intuitive."<cite>Owner, Lavu</cite></blockquote>
+  <blockquote>"If a guest wants to pay $50 and leave, you have to pay the rest."<cite>Square Community — partial payment of an arbitrary amount on an open check is not supported by mainstream systems</cite></blockquote>
+  <blockquote>"There is no way I can remember who got what two hours later."<cite>Waiter Rant</cite></blockquote>
+  <p>That last line is the entire justification for seat-level ordering — <strong>and the reason it must cost zero extra taps at entry.</strong> If assigning a seat costs even one tap per item, servers won't do it, and the split is unrecoverable at the end of the meal.</p>
+
+  <h3>Coursing has an architectural bug, and staff route around it</h3>
+  <blockquote>"If a table wants to order another drink while the entrees are on hold, once they hit send, the entire entree course will also send to the kitchen."<cite>Toast Community, "Meal Pacing"</cite></blockquote>
+  <p>The vendor documents the cause: <strong>"Course Pacing and Server Item Firing are mutually exclusive."</strong> The operator must choose, globally and in advance, between server-controlled timing and kitchen-controlled pacing — when what service requires is a per-item, per-moment answer. So operators invent a pseudo-language: default all food to "entrée", leave drinks with no course at all so they escape the pacing engine, manually downgrade items to "appetizer" when needed. Staff programming a state machine through menu configuration.</p>
+
+  <h3>Speed screens: a workaround shipped as best practice</h3>
+  <p>Toast's own bar guidance is to build a hidden menu group literally named <strong>"Speed Screen"</strong> and fill it with duplicate copies of the top cocktails so bartenders never traverse the real menu. <strong>The fact that the vendor's best practice is "duplicate your menu into a shadow menu" is the whole product opportunity</strong> — that screen should be generated automatically from sales data, per venue, per daypart, per user.</p>
+
+  <h3>Kitchen tickets fail silently</h3>
+  <blockquote>"Bluetooth printers continuously disconnect without a notification. You have no idea the ticket didn't make it."<cite>Square Community, KDS feedback</cite></blockquote>
+  <blockquote>"Cook should be able to glance at a ticket without having to stop what they are doing."<cite>The best design brief in the corpus — attached to a request for larger kitchen-ticket fonts that has gone four years unaddressed</cite></blockquote>
+
+  <h3>Handhelds don't reach the terrace</h3>
+  <blockquote>"Handhelds can't even reach my patio tables."<cite>General Manager, SpotOn</cite></blockquote>
+  <p>Vendors now sell cellular fallback as the fix — an admission that Wi-Fi doesn't cover outdoor seating. And on the screen itself: <em>"guests cannot read the screen in sunlight"</em> versus <em>"MY SCREEN ARE TOO BRIGHT!"</em>, where the official answer was to change iPad settings. The POS delegates a service-critical setting to the OS.</p>
+
+  <h2>Owner and accountant complaints</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">Contracts &amp; cancellation</h3>
+      <p style="font-size:14px;color:var(--ink-2)">Toast: 12–36 months, auto-renewing, early-termination = full acceleration of remaining fees plus a financing penalty. Clover: 36–48 month leases, exits quoted at $600–$3,000. Epos Now: <em>"they are still billing me for services for 2024 and 2025 even though we've canceled."</em></p>
+      <blockquote style="margin-bottom:0">"In one more year I will never have to deal with this company again."<cite>TouchBistro ops manager — not switching, serving out a sentence</cite></blockquote>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Fee stacking</h3>
+      <p style="font-size:14px;color:var(--ink-2)">Lightspeed charges <strong>$99/month as a penalty for using a third-party processor</strong>. SpotOn charges $500 to build your menu and $1,500 for on-site install, then meters online ordering, loyalty, reservations and KDS separately. Revel's API access <em>"costs more per month than the entire POS system does for 5 stations."</em> Toast's July 2023 attempt to charge the <em>guest</em> $0.99 per online order was withdrawn within a month.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Reconciliation — ranked #1</h3>
+      <p style="font-size:14px;color:var(--ink-2)">"POS deposits don't match bank" is the top finding of the only quantitative study available, with roughly <strong>1 in 8 negative POS reviews</strong> citing it as the primary frustration. Operators call this "doing the paperwork": 30–60 minutes per venue per day of unpaid management labour caused by software design.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Why back-office modules die</h3>
+      <p style="font-size:14px;color:var(--ink-2)">MarketMan setup <em>"requires hundreds to thousands of hours"</em>; Craftable <em>"you can end up spending months setting it up."</em> Then one badly modelled item poisons the variance report — <em>"I can't trust the theoretical COGS"</em> — and the operator stops looking. Clover's unit-conversion failure throws cost <em>"off by up to 30%."</em></p>
+    </div>
+  </div>
+
+  <h2>Under-discussed — tolerated, not complained about</h2>
+  <p>These surfaced as incidental clauses inside reviews about something else. That is the signal: they're priced in as inherent to the category. Each is a wedge.</p>
+  <ul class="tight">
+    <li><strong>Offline liability is silently transferred to the merchant.</strong> Toast's own docs: <em>"You are responsible for any declined, expired, or disputed payments taken in Offline Mode."</em> Nobody complains about this; everybody is exposed to it.</li>
+    <li><strong>Permission granularity is binary</strong> — one admin code, so managers share the owner's credentials. A fraud hole no review names as such.</li>
+    <li><strong>No changelogs.</strong> <em>"They also add and remove functions without communicating it."</em> In no other category of business software is that acceptable.</li>
+    <li><strong>Licensing has no seasonal elasticity</strong> — you pay for winter terminals you don't use. Directly relevant to a terrace market.</li>
+    <li><strong>The back office is a desktop web app.</strong> Independent owners don't have an office; they have a phone and a corner of the bar.</li>
+    <li><strong>Nothing validates print output.</strong> Printer routing is treated as plumbing; it's the kitchen's entire interface, and it silently breaks.</li>
+    <li><strong>Support has no local language or timezone.</strong> For a Serbia-scoped product this isn't a footnote — it's the primary structural advantage available against any international vendor.</li>
+    <li><strong>Cash-heavy operation is a second-class citizen.</strong> Every reconciliation model assumes card-dominant flow, so the POS reconciles the easy half and ignores the hard half.</li>
+  </ul>
+</section>
+
+<!-- ============ SERBIA ============ -->
+<section role="tabpanel" id="t-serbia">
+  <p class="lede">The regulatory shape determines both what you must build and who cannot compete with you.</p>
+
+  <h2>The architecture the law imposes</h2>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Component</th><th>What it does</th><th>What it means for you</th></tr></thead>
+    <tbody>
+      <tr><td><strong>ESIR</strong></td><td>Your POS. Composes the invoice, sends it to the PFR, prints the result. Never signs anything, never talks to the tax authority.</td><td>This is the thing you certify. Approval decision within 15 days, no published state fee.</td></tr>
+      <tr><td><strong>L-PFR</strong> (local)</td><td>Signs the receipt with the security element, assigns fiscal counters, generates the verification QR, transmits encrypted audit packages. Works offline.</td><td>Certify your own — otherwise you leak €3–6/venue/month and inherit a support dependency you don't control. ~300 already approved.</td></tr>
+      <tr><td><strong>V-PFR</strong> (virtual)</td><td>Same job, run as a state web service.</td><td><strong>No offline capability at all.</strong> One bad ISP evening and the bar legally can't sell.</td></tr>
+      <tr><td><strong>Bezbednosni element</strong></td><td>The taxpayer's certificate and counters. Free, issued in ~1 day.</td><td>Bound to a specific premises — relocating forces a new one. <strong>Validity is 3 years, and on expiry the register simply stops producing valid receipts.</strong> Almost no product warns you.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout risk">
+    <div class="h"><span class="dot" style="background:var(--critical)"></span>The one architectural decision that matters</div>
+    <p><strong>Any material modification to a certified element requires fresh approval.</strong> A SaaS product shipping weekly is fundamentally at odds with a per-version approval regime. Architect so the fiscal element is a small, stable, separately-versioned module while tables, menus, ordering and analytics ship continuously.</p>
+  </div>
+
+  <div class="callout">
+    <div class="h"><span class="dot" style="background:var(--s1)"></span>The receipt is not yours</div>
+    <p>The PFR returns a <code>journal</code> field — the rendered receipt body — and the ESIR prints it as-is. Your differentiation lives strictly <em>before</em> the fiscal moment (tabs, splitting, ordering, normativi) and <em>after</em> it (analytics, SEF, accounting).</p>
+  </div>
+
+  <h2>Quirks to get right on day one</h2>
+  <ul class="tight">
+    <li><strong>Payment methods collapse.</strong> For hospitality and bakeries, cash, card and cheque are all reported to the tax system as <em>"gotovina"</em>. Your internal payment breakdown and the fiscally-reported one are two different things.</li>
+    <li><strong>On-premises food and drink is 20% VAT, not 10%.</strong> Verified against the statute — several Serbian tax-advisory sites get this wrong. A bakery selling bread over the counter is 10%; a café serving the same bread at a table is 20%. Accommodation is 10%. Never hardcode rates: read the versioned rate table from the PFR at runtime.</li>
+    <li><strong>Refunds require buyer identification</strong>, a reference to the original receipt, and a signed customer copy when cash is returned. There is no separate "void" — a void is a refund referencing the original.</li>
+    <li><strong>The open tab does not exist in law.</strong> The trigger is the moment of supply, not payment. There is no fiscal document type for an unpaid tab. Model it: the running tab lives in your own domain, unfiscalized; <em>Predračun</em> for the "check, please" print; a single <em>Promet/Prodaja</em> at settlement; <em>Avans</em> for deposits.</li>
+    <li><strong>Fiscalization is the irreversible commit.</strong> Once issued, "split it differently" becomes a refund plus re-issue. So the pre-fiscal check must be completely fluid, and the UI must mark the commit as the point of no return.</li>
+    <li><strong>QR print calibration is the #1 field defect.</strong> Documented cases of venues issuing malformed receipts <em>for months</em> because of printer margins, with nothing in the stack validating print output. Ship a routine that renders and machine-scans a test receipt at setup and on every printer change. Nobody does this.</li>
+    <li><strong>Normativi are legally mandated</strong> — the Zakon o ugostiteljstvu requires standard portion/recipe norms a guest may inspect on request. Not a nice-to-have.</li>
+  </ul>
+
+  <h2>What your customer's life looks like</h2>
+  <div class="tiles">
+    <div class="tile"><div class="lab">Average net wage, Serbian food &amp; beverage service</div><div class="val">€516</div><div class="cap">Below the legal minimum wage — RZS, Mar 2025</div></div>
+    <div class="tile"><div class="lab">Café/restaurant service price inflation, YoY</div><div class="val">7.8%</div><div class="cap">vs 2.8% general CPI — ~3× the price level</div></div>
+    <div class="tile"><div class="lab">Operating margin, 5th-largest Serbian restaurant group</div><div class="val">3.8%</div><div class="cap">CIG / Monument, 2022</div></div>
+    <div class="tile"><div class="lab">Grey economy share of tourism &amp; hospitality</div><div class="val">40–50%</div><div class="cap">Foreign Investors Council White Book 2024</div></div>
+    <div class="tile"><div class="lab">New F&amp;B company registrations, 2024</div><div class="val">7,073</div><div class="cap">3rd-largest category — your annual funnel</div></div>
+  </div>
+
+  <blockquote>"Ukupni troškovi su porasli za nekih 60 odsto, a mogućnost uvećanja cena kafe u prodaji nije veća od 20 do 30 odsto jer tržište više od toga ne može da podnese."
+  <cite>Serbian café operator — costs up 60%, achievable price increase 20–30%, because the market won't bear more</cite></blockquote>
+
+  <p>And the ceiling is already hit: a Belgrade cappuccino costs <strong>~21% more</strong> than a Zagreb one while Belgrade net salaries are <strong>~54% lower</strong>. There is no headroom left in price — only in cost, throughput and shrinkage. Which is exactly what a POS can attack.</p>
+
+  <div class="callout win">
+    <div class="h"><span class="dot" style="background:var(--good)"></span>The terrace insight</div>
+    <p>Serbia never adopted a full indoor smoking ban, so terrace culture is cultural rather than regulatory — stable, not at risk of a rule change. Combine a €2.78 cappuccino with long dwell time and the economics are necessarily <strong>low-check, long-dwell, high-table-count</strong>. The operative KPI is <strong>revenue per table-hour, not average check</strong>, and the commercially decisive event is the <strong>re-order</strong>, not the seating.</p>
+  </div>
+
+  <h2>The grey economy, stated neutrally</h2>
+  <p>A June 2026 Forbes Srbija investigation documented three named mechanics in Serbian venues: <strong>"međuzbir"</strong> — an interim slip handed to the guest that deliberately lacks the QR code and mandatory elements; <strong>"reprezentacija"</strong> — booking the transaction as internal entertainment, later voided or reclassified; and receipts without QR codes generally. POS software's role in that mechanism is now publicly named.</p>
+  <p>The commercially coherent response: sell <strong>staff-facing control</strong> as the headline value (owners want it), make the fiscal path <strong>un-gameable</strong> and sell that as insurance against a 15-day closure, and <strong>do not build "flexible" non-fiscal bill printing.</strong> That is the međuzbir mechanism, and it's a legal and reputational liability.</p>
+  <p>Counterweight worth knowing: the state receipt lottery <em>"Uzmi račun i pobedi"</em> had 368,000+ registered accounts by mid-2025 — guests have an active incentive to demand a QR-coded receipt, which mechanically undercuts the trick.</p>
+
+  <h2>Payments — why the Toast playbook doesn't transplant</h2>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Metric</th><th class="num">Q1 2026</th><th class="num">YoY</th></tr></thead>
+    <tbody>
+      <tr><td>POS terminals in Serbia</td><td class="num">187,957</td><td class="num">+10.3%</td></tr>
+      <tr><td>Card transactions at merchants</td><td class="num">195.2M</td><td class="num">+18.7%</td></tr>
+      <tr><td><strong>IPS instant payments</strong></td><td class="num"><strong>31.9M · RSD 392.8bn</strong></td><td class="num"><strong>+30.8%</strong></td></tr>
+      <tr><td>Mobile banking users</td><td class="num">5.34M</td><td class="num">+10.3%</td></tr>
+    </tbody>
+  </table></div>
+  <p>IPS is compounding roughly <strong>1.7× faster</strong> than card acceptance, and <strong>IPS SKENIRAJ needs no payment terminal at all</strong> — the merchant displays a QR on any screen it already controls, the guest scans it in their banking app, funds settle in ~1 second, 24/7, and the payer is never charged.</p>
+  <p><strong>But there is no spread to take.</strong> The IPS interchange cap is 0.2% — identical to the debit-card cap — and the NBS system fee is RSD 1–2 flat per point-of-sale payment request. On a RSD 3,000 (~€26) café bill the entire rail costs <strong>RSD 2 (€0.017)</strong>. Non-bank PSPs may only be <em>indirect</em> IPS participants. And hardware subsidy is unaffordable: Toast burns $220M a year of gross loss on it.</p>
+  <div class="callout win">
+    <div class="h"><span class="dot" style="background:var(--good)"></span>So: ship IPS free and instrument the savings</div>
+    <p>Every IPS payment displaces a card payment the venue <em>is</em> paying an acquirer for. Put the number on the dashboard — <em>"IPS payments this month: 1,240. Estimated acquiring fees avoided: RSD 41,000"</em> — and that becomes your renewal argument, restated monthly, for free.</p>
+  </div>
+</section>
+
+<!-- ============ COMPETITORS ============ -->
+<section role="tabpanel" id="t-comp">
+  <p class="lede">Four tiers, none dominant. Marketing has modernised much faster than the software.</p>
+
+  <div class="tblwrap"><table>
+    <thead><tr><th>Vendor</th><th>Tier</th><th class="num">Price (ex-VAT)</th><th>Honest read on the product</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Cheers</strong> (VIRTEV, Niš)</td><td>Specialist SaaS</td><td class="num">4,000 RSD/mo · €34</td><td><span class="tag new">Watch closely</span> Newest credible entrant, L-PFR approved Aug 2026 — scaling right now. Offline-first, Wolt/Glovo auto-ingest, IPS QR tipping straight to the waiter's account, transparent modular pricing, no contract, no hidden fees. <strong>No pricing-abuse wedge exists against this one.</strong></td></tr>
+      <tr><td><strong>eBar</strong> (Belgrade)</td><td>Specialist SaaS</td><td class="num">€29–44/mo · setup €99</td><td><span class="tag new">Modern</span> Cleanest public pricing, real integration catalogue, offline-capable waiter app, credible Belgrade logo wall (Burrito Madre, Dolly Bell, Walter).</td></tr>
+      <tr><td><strong>Garson</strong> (2D Soft, Novi Sad)</td><td>Specialist SaaS</td><td class="num">€39–95/mo</td><td><span class="tag mid">Solid</span> Real engineering organisation. Full mobile suite (Fly / Live / Analytics), 2FA, scales to hotel chains.</td></tr>
+      <tr><td><strong>Sky POS</strong> (SI/RS)</td><td>Specialist SaaS</td><td class="num">3,490–11,990 RSD/mo</td><td><span class="tag old">Dated under the marketing</span> Claims 4,000+ regional clients — but the flagship waiter tablet app is an <strong>Adobe AIR build</strong> (dead Flash-era runtime), 500+ installs, last updated Oct 2024.</td></tr>
+      <tr><td><strong>DCS Cafe Soft</strong></td><td>Specialist SaaS</td><td class="num">€45/mo + €150 install</td><td><span class="tag old">Windows, 2004 codebase</span> Nice pitch though: "5 min training for waiters, 1h for managers."</td></tr>
+      <tr><td><strong>POS Sector</strong></td><td>Specialist SaaS</td><td class="num">Not published</td><td><span class="tag old">Marketing, not product</span> Loudest content/SEO footprint in the region across three domains — and <strong>zero reviews on G2</strong>. Their real competence is SEO.</td></tr>
+      <tr><td><strong>Wings Software</strong></td><td>ERP generalist</td><td class="num">€400 + €200 perpetual</td><td><span class="tag old">Price list dated 7 Sep 2012</span> Per-machine perpetual Windows licence, support metered at six phone calls a month. Deep accounting integration is the strength.</td></tr>
+      <tr><td><strong>Datalab PANTHEON</strong></td><td>ERP generalist</td><td class="num">€279–2,299 + 22%/yr</td><td><span class="tag old">Perpetual + maintenance trap</span> Serious regional ERP, but hospitality is a bolt-on. Weak on floor plans, KDS, waiter flow.</td></tr>
+      <tr><td><strong>Galeb / HCP</strong></td><td>Fiscal hardware</td><td class="num">Devices 19.5–35.9k RSD</td><td><span class="tag mid">Underrated moat</span> Software is thin — but they have <strong>nationwide physical service networks</strong>. When a fiscal printer dies at 22:00 on a Friday, a van beats a chatbot.</td></tr>
+      <tr><td><strong>mts / Yettel</strong></td><td>Telco-bundled</td><td class="num">1,899 RSD/mo (24mo)</td><td><span class="tag mid">Distribution, not product</span> Undifferentiated software, but a telco can bundle POS into a mobile bill and reach every SME in the country. Yettel launched at a 1 RSD/month promo.</td></tr>
+      <tr><td><strong>Tezga / GoSimple</strong></td><td>Micro ESIR</td><td class="num">990–2,390 RSD/mo</td><td><span class="tag mid">Sets the price floor</span> No table map, no KDS — not a hospitality product, but it resets price expectations from below.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <div class="h"><span class="dot" style="background:var(--s1)"></span>Nobody with real money is attacking this</div>
+    <p>No POS or hospitality startup appears in Serbian or Croatian funding coverage. Storyous was acquired by Teya, which doesn't operate in Serbia. Glovo exited Slovenia (2024) and Bosnia (Aug 2026) but <em>kept</em> Serbia. The space is unconsolidated, undercapitalised, and un-attacked.</p>
+  </div>
+
+  <div class="chart">
+    <div class="ctitle">What a properly-equipped table-service venue actually pays</div>
+    <div class="csub">The €34 headline is the entry price, not the ARPU. Cheers' module stack for a venue that wants a waiter app, kitchen display, analytics and one delivery platform — monthly, ex-VAT, RSD.</div>
+    <div class="stack" id="costStack"></div>
+    <div class="stackkey" id="costKey"></div>
+    <small class="note">Total 10,000 RSD/mo ex-VAT ≈ €85 (€102 incl. VAT). Realised ARPU across the market sits at roughly €50–75/month. Comparable structures: eBar €29–44 + €30 per delivery platform; Garson €39–95; DCS €45 + €150 install.</small>
+  </div>
+
+  <div class="callout win">
+    <div class="h"><span class="dot" style="background:var(--good)"></span>Where to attack: the module stack, not the headline price</div>
+    <p>Undercutting on headline price is the losing move — the anchor is already thin (Cheers' annual discount is only 8.3%) and a price war in a €9–21M market destroys the category. Instead: <strong>include the waiter app and analytics rather than metering them</strong> (every venue needs both, every competitor meters both), and <strong>price extra terminals near zero</strong> (per-terminal pricing is the most resented line item in the industry, and marginal terminals cost you nothing). A four-terminal venue saves ~6,300 RSD/mo on that line alone.</p>
+  </div>
+</section>
+
+<!-- ============ WEDGES ============ -->
+<section role="tabpanel" id="t-wedges">
+  <p class="lede">Ranked by evidence strength × severity × addressability × defensibility against a Serbian incumbent. Click any wedge to expand.</p>
+
+  <div class="filters">
+    <span class="flab">Show</span>
+    <button class="chip" data-filter="all" aria-pressed="true">All 14</button>
+    <button class="chip" data-filter="t1" aria-pressed="false">Tier 1 — the product</button>
+    <button class="chip" data-filter="t2" aria-pressed="false">Tier 2 — the backend</button>
+    <button class="chip" data-filter="t3" aria-pressed="false">Tier 3 — positioning</button>
+  </div>
+
+  <div id="wedgeList"></div>
+
+  <h2>Deliberately not doing</h2>
+  <ul class="tight no">
+    <li><strong>Reservations as a café feature.</strong> No habit exists in Serbia — TheFork doesn't operate here, no local platform has presence, and restorani.rs / restoran.rs were both unreachable. You'd be creating the behaviour, not capturing it. Build it for the restaurant/splav segment where a table is a scarce, biddable asset.</li>
+    <li><strong>Paperless-first receipts.</strong> As of July 2026 Serbian law still requires the printed fiscal receipt; digital may only supplement it. Position QR receipts as an add-on until the law changes.</li>
+    <li><strong>Undercutting Cheers on headline price.</strong> Attack the module stack instead.</li>
+    <li><strong>"Flexible" non-fiscal bill printing.</strong> That is the međuzbir mechanism, now publicly documented, with POS vendors named. Legal and reputational liability.</li>
+  </ul>
+</section>
+
+<!-- ============ MONEY ============ -->
+<section role="tabpanel" id="t-money">
+  <p class="lede">What the global business model teaches, what it costs you to copy it, and what to do instead.</p>
+
+  <h2>How the archetype actually makes money</h2>
+  <p>Toast FY2025, from the audited 10-K:</p>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Stream</th><th class="num">Revenue</th><th class="num">% of revenue</th><th class="num">Gross margin</th><th class="num">% of gross profit</th></tr></thead>
+    <tbody>
+      <tr><td>Payments</td><td class="num">$5,037M</td><td class="num">81.9%</td><td class="num">22.8%</td><td class="num">71.9%</td></tr>
+      <tr><td><strong>Subscription software</strong></td><td class="num">$936M</td><td class="num">15.2%</td><td class="num"><strong>71.8%</strong></td><td class="num">42.2%</td></tr>
+      <tr><td>Hardware + services</td><td class="num">$180M</td><td class="num">2.9%</td><td class="num"><strong>−122%</strong></td><td class="num">−13.8%</td></tr>
+    </tbody>
+  </table></div>
+  <p>Three structural facts fall out. Payments looks enormous but is low-margin — 77% passes through to card networks. <strong>Software is 15% of revenue but 42% of gross profit</strong>, 3.1× more profitable per revenue dollar. And <strong>hardware is deliberately sold at a $220M annual loss</strong> — it is not a revenue stream, it is a capitalised customer-acquisition channel funded by the payments spread, and the subsidy per location is <em>increasing</em>.</p>
+
+  <div class="callout">
+    <div class="h"><span class="dot" style="background:var(--s1)"></span>The cleanest natural experiment in the industry</div>
+    <p>Same vendor, two SpotOn plans: <strong>$0/mo at 2.79% + $0.20</strong> versus <strong>$55/mo at 2.45% + $0.15</strong>. The delta breaks even at roughly <strong>$16,200/month of card volume</strong> — far below what a real full-service venue does. Freemium POS is a price-discrimination device that systematically overcharges the customers it attracts.</p>
+  </div>
+
+  <h2>Suggested pricing shape for Serbia</h2>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Tier</th><th class="num">Price ex-VAT</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Kafić</strong></td><td class="num">~3,900 RSD/mo · €33</td><td>ESIR fiscalisation, tables, orders, printers, <strong>waiter app included</strong>, <strong>dashboard included</strong>, IPS QR pay + tipping</td></tr>
+      <tr><td><strong>Restoran</strong></td><td class="num">~6,900 RSD/mo · €59</td><td>+ KDS, customer display, inventory/normativi, one delivery integration</td></tr>
+      <tr><td><strong>Grupa</strong></td><td class="num">~5,900 RSD/mo · €50 per location, min 3</td><td>+ multi-location back office, consolidated analytics, central menu</td></tr>
+      <tr><td>Extra terminal</td><td class="num">~900 RSD/mo · €8</td><td>vs 3,000 RSD market rate</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>What to refuse, explicitly and in marketing</h2>
+  <p>Every one of these inverts a documented incumbent abuse, and all of them cost nothing to build.</p>
+  <ul class="tight">
+    <li><strong>Month-to-month.</strong> No 12/24/36-month term, no auto-renewal, no early-termination fee.</li>
+    <li><strong>No hardware sale, lease or daily-sales sweep.</strong> Bring your own Android tablet.</li>
+    <li><strong>No processor lock, no penalty for using another.</strong></li>
+    <li><strong>Price changes only at a stated annual date, with 90 days' notice.</strong></li>
+    <li><strong>No guest-facing fees, ever.</strong> Put it in writing.</li>
+    <li><strong>Free export of your own data on demand</strong>, plus a documented public API from day one and no export paywall.</li>
+  </ul>
+  <small class="note">Caveat: this is a strong weapon against the international model and a weak one against Cheers, who already price cleanly with no contract and no hidden fees.</small>
+
+  <h2>Where the money and the moat actually are</h2>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Horizon</th><th>Revenue</th><th>Moat</th></tr></thead>
+    <tbody>
+      <tr><td>Year 1</td><td>SaaS at €33–59/venue/month</td><td>ESIR certification + product quality + Serbian-language support</td></tr>
+      <tr><td>Year 2</td><td>+ module and delivery attach, multi-venue groups</td><td>Self-filling normativi from SEF; bookkeeper integration; switching cost via accumulated data</td></tr>
+      <tr><td>Year 2–3</td><td>+ acquirer referral / PSP revenue share</td><td>You own the terminal-less flow and the merchant relationship acquirers are already paying to acquire</td></tr>
+      <tr><td>Year 3+</td><td>+ regional (BiH, ME, MK, HR)</td><td>Peer-benchmarking data network; possibly a PISP licence — only 12 non-bank PSPs exist in all of Serbia</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Funding worth timing</h2>
+  <ul class="tight">
+    <li><strong>Innovation Fund Mini Grants</strong> — up to €120,000 at 70% co-financing, company ≤10 years old, projects ≤12 months.</li>
+    <li><strong>Smart Start</strong> — RSD 5.4M (~€45,600) at 90%, plus RSD 600k mentorship, for teams of 2–5 forming a new d.o.o.</li>
+    <li><strong>Innovation Vouchers</strong> — RSD 800k at 60%, custom software development explicitly eligible. <strong>These are claimable by your customers.</strong> "We'll help you claim the voucher that pays for switching" is a fundable acquisition motion rather than a discount.</li>
+  </ul>
+  <small class="note">All calls were closed at time of research. They are recurring annual calls — timing the next window matters.</small>
+</section>
+
+<!-- ============ OPEN ITEMS ============ -->
+<section role="tabpanel" id="t-open">
+  <p class="lede">Ordered by how much they could change the plan. Nothing here is a blocker to starting; several are blockers to committing.</p>
+
+  <div class="tblwrap"><table>
+    <thead><tr><th class="num">#</th><th>Item</th><th>Why it matters</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td><strong>Zakon o elektronskom fakturisanju, Sl. glasnik RS 109/2025</strong> (passed 4 Dec 2025)</td><td>Substantive content not retrieved. Read before finalising any SEF integration — and W5/W6 both depend on SEF.</td></tr>
+      <tr><td class="num">2</td><td><strong>Open-tab edge cases</strong> — a tab spanning a shift or calendar-day boundary, a walk-out, a monthly corporate account</td><td>The law is silent and no published opinion exists. Worth a formal Ministry of Finance <em>mišljenje</em>.</td></tr>
+      <tr><td class="num">3</td><td><strong>Tips (napojnica)</strong> — rate, standard deduction, filing mechanics</td><td>MoF opinions classify tips as <em>drugi prihodi</em> under self-assessment, but the detail is paywalled. The exposure of facilitating untracked tip income at scale is real and untested. Get counsel before shipping W10.</td></tr>
+      <tr><td class="num">4</td><td><strong>Is V-PFR acceptable for brick-and-mortar hospitality?</strong></td><td>One vendor asserts every venue must have an L-PFR; the Uredba appears to contradict it. Changes the whole hardware story.</td></tr>
+      <tr><td class="num">5</td><td><strong>Serbia's configured security-element unaudited-amount limit</strong></td><td>The mechanism is confirmed for the TaxCore platform; Serbia's values aren't. W4 surfaces this to the manager, so the thresholds have to be right.</td></tr>
+      <tr><td class="num">6</td><td><strong>New Zakon o zaštiti potrošača (35/2026)</strong> — application start date</td><td>Changes table-side price-list and unbundling obligations. Deferred application, date unconfirmed.</td></tr>
+      <tr><td class="num">7</td><td><strong>Cash-vs-card split in Serbian hospitality</strong></td><td>The only figure available is HORES claiming "over 80% by card" in a lobbying context, contradicted by NBS's characterisation of cash dominance. <strong>Do not model anything payments-dependent on it.</strong></td></tr>
+      <tr><td class="num">8</td><td><strong>Average check, dwell time and table turnover for Serbian cafés</strong></td><td>No public data exists at all. W1 — the highest-ranked wedge — depends on getting this right. A week of counting at ten Belgrade terraces beats anything published.</td></tr>
+      <tr><td class="num">9</td><td><strong>Wolt/Glovo Serbian commission rates</strong>, and whether merchants can self-serve settlement data</td><td>Neither publishes; Glovo's API docs are robots-blocked. W8 depends on this.</td></tr>
+      <tr><td class="num">10</td><td><strong>Are normativi and KEP/KEPU books mandated in a specific form?</strong></td><td>Decides whether the inventory module is a compliance product or optional analytics — which changes how you sell it.</td></tr>
+      <tr><td class="num">11</td><td><strong>Balkan staff-theft prevalence</strong></td><td>Widely repeated anecdotally, unverified by desk research. W7's whole premise.</td></tr>
+      <tr><td class="num">12</td><td><strong>Minimum capital for a Serbian payment-institution licence</strong></td><td>Relevant only to the year-3 PISP path.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Next five things I'd actually do</h2>
+  <ol class="tight">
+    <li><strong>Ten to fifteen operator interviews in Belgrade and Novi Sad</strong> — mixed café/bar/restaurant, at least three multi-venue. Closes gaps 8, 9 and 11 in one pass, and validates whether "time since last order" matches how they actually think, and whether closure risk is really the fear that sells.</li>
+    <li><strong>Pull APR financial statements for NACE 56.10 and 56.30</strong> to build a definitive, rankable list of every multi-venue operator in Serbia with revenue and headcount. That is your lighthouse target list. Known candidates: <strong>Kafeterija</strong> (~60 venues, €5m from BlackPeak at ~€30m valuation, acquiring Loft and Bulgaria's Eddy's), <strong>Walter</strong> (60 restaurants, 25 cities), <strong>CIG/Monument</strong> (5th-largest by revenue, already runs its own delivery stack).</li>
+    <li><strong>Start the ESIR/L-PFR sandbox work now.</strong> Budget 2–4 months and treat it as schedule-critical. Certifying your own L-PFR alongside the ESIR removes a €3–6/venue/month margin leak and a support dependency you don't control.</li>
+    <li><strong>Book HORES's 2nd Congress of Serbian Hoteliers and Restaurateurs</strong> — "Play for Hospitality 2.0", 11–13 October 2026, Belgrade Fair. A dated, concrete go-to-market event roughly seven weeks out.</li>
+    <li><strong>Time the Innovation Fund window</strong> and build the Innovation Voucher motion into the sales pitch.</li>
+  </ol>
+</section>
+
+<footer>
+  Terminal Redux market &amp; pain-point research · 20 August 2026. Full report with inline citations and the complete source list accompanies this brief.
+  Figures marked as estimates are estimates; twelve items require primary verification before capital commitment.
+</footer>
+
+</div>
+
+<script>
+/* ---------- theme ---------- */
+const tBtn=document.getElementById('themeToggle');
+tBtn.addEventListener('click',()=>{
+  const dark=document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme',dark?'light':'dark');
+  tBtn.textContent=dark?'Dark':'Light';
+});
+if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){
+  document.documentElement.setAttribute('data-theme','dark');tBtn.textContent='Light';
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('[role="tab"]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('[role="tab"]').forEach(x=>x.setAttribute('aria-selected','false'));
+    b.setAttribute('aria-selected','true');
+    document.querySelectorAll('[role="tabpanel"]').forEach(p=>p.classList.remove('on'));
+    document.getElementById(b.dataset.tab).classList.add('on');
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+});
+
+/* ---------- rating chart ---------- */
+const ratings=[
+  ['Square for Restaurants',4.4,3.9],['Lightspeed Restaurant',4.4,4.3],['SpotOn',4.2,4.2],
+  ['Lavu',4.2,4.2],['Oracle MICROS Simphony',4.2,3.3],['Toast POS',4.1,3.7],
+  ['TouchBistro',3.8,3.4],['Clover',3.8,3.2],['Epos Now',3.8,3.6],['Revel Systems',3.6,3.4]
+];
+document.getElementById('ratingChart').innerHTML=ratings.map(([n,o,c])=>`
+  <div class="brow">
+    <div class="blabel">${n}</div>
+    <div class="bstack">
+      <div class="bar" style="width:${o/5*88}%;background:var(--s1)" title="${n} — overall ${o}"><span class="bval">${o.toFixed(1)}</span></div>
+      <div class="bar" style="width:${c/5*88}%;background:var(--s2)" title="${n} — customer service ${c}"><span class="bval">${c.toFixed(1)}</span></div>
+    </div>
+  </div>`).join('');
+
+/* ---------- cost stack ---------- */
+const cost=[
+  ['POS / ESIR base',4000,'#3987e5','#fff'],['Wolt + Glovo',5000,'#2a78d6','#fff'],
+  ['Waiter app',1500,'#5598e7','#fff'],['KDS',1000,'#6da7ec','#0b0b0b'],['Analytics dashboard',500,'#86b6ef','#0b0b0b']
+];
+const total=cost.reduce((a,[,v])=>a+v,0);
+document.getElementById('costStack').innerHTML=cost.map(([n,v,c,tc])=>
+  `<div class="seg" style="flex:${v};background:${c};color:${tc}" title="${n}: ${v.toLocaleString('en-US')} RSD/mo">${v/total>0.12?v.toLocaleString('en-US'):''}</div>`).join('');
+document.getElementById('costKey').innerHTML=cost.map(([n,v,c])=>
+  `<span><i class="swatch" style="background:${c}"></i><span class="kn">${n}</span><strong class="kv">${v.toLocaleString('en-US')} RSD</strong></span>`).join('');
+
+/* ---------- wedges ---------- */
+const wedges=[
+{id:'W1',tier:'t1',t:'Terrace-native floor state, measured in table-hours',
+ c:'Per-table “time since last order” ageing on a floor plan a manager can reconfigure in seconds.',
+ b:`<p>Serbian café economics are structurally <strong>low-check, long-dwell, high-table-count</strong>, and the commercially decisive event is the <strong>re-order</strong>, not the seating. A waiter working 25 outdoor tables cannot track who finished their coffee 20 minutes ago.</p>
+ <p>This converts dwell time from a margin killer into re-order opportunity, and needs <em>zero</em> behaviour change from the guest. Pair it with floor plans a manager can flip on a phone in seconds (weather changes capacity 2–4× overnight), merge/move as a first-class physical operation rather than a $0 fake SKU, and <strong>revenue per table-hour / per m² of terrace as the headline KPI instead of average check</strong>.</p>
+ <div class="ev">Evidence: the fake-SKU table merge and the rain scenario from Square Community; 5-step item transfers from Toast's own docs; €2.78 Belgrade cappuccino against Zagreb pricing; no smoking ban, so terrace culture is stable. <strong>Depends on open item #8.</strong></div>`},
+{id:'W2',tier:'t1',t:'The pre-fiscal check as a fully manipulable object',
+ c:'Partial payment of any amount, split one item N ways, seat assignment at zero tap cost.',
+ b:`<p>Because fiscalization is an <strong>irreversible commit</strong> under Serbian law, the check before it must be completely fluid — and the UI must mark the commit as the point of no return.</p>
+ <p>Concretely: <strong>partial payment of any amount at any time</strong> (the “one of six leaves and wants to pay their 900 RSD” case, currently impossible in mainstream systems); <strong>split one item across N people</strong> (the shared bottle — universal case, universal failure); <strong>seat assignment that costs zero extra taps at entry</strong>; move an item to another check by pointing at a table, not typing a check number.</p>
+ <div class="ev">Evidence: the deepest concentration of complaints in the whole corpus — “check splitting is the most laborious I have ever experienced”, “if a guest wants to pay $50 and leave, you have to pay the rest”, “there is no way I can remember who got what two hours later”.</div>`},
+{id:'W3',tier:'t1',t:'Zero-training waiter flow, in three languages',
+ c:'A new konobar works a full first shift correctly with no manual and no manager present.',
+ b:`<p>5–10k trained staff emigrate every summer; kitchens are increasingly staffed by non-Serbian speakers; the sector pays €516 net — below the legal minimum wage. <strong>Onboarding time is a recurring operating cost, several times a year, per venue.</strong></p>
+ <p>Mechanisms: an auto-generated speed screen from real sales data per venue/daypart/user (replacing the industry's hand-built “shadow menu” workaround); one fuzzy-search field resolving items, tables, names and commands together — which also makes SR/EN aliasing trivial; modifiers sorted by frequency and colour-separated from paid add-ons; undo-with-audit-log instead of permission walls; &lt;100ms optimistic UI on every item add.</p>
+ <div class="ev">Evidence: Toast's own bar best practice is to duplicate your menu into a hidden “Speed Screen”; unsortable modifiers; “touch screen interaction is not instant, there is a half second lag”; Croatian work permits to Serbian citizens 24,278 in 2025.</div>`},
+{id:'W4',tier:'t1',t:'Offline-first, with visible fiscal health',
+ c:'Surface what nobody surfaces: SE limit consumed, days since audit, certificate expiry, unacked tickets.',
+ b:`<p>The L-PFR architecture makes genuine offline continuity a <strong>legal design assumption</strong>, not a vendor courtesy — inverting the single worst failure mode of every cloud incumbent, who instead shift the liability to the merchant.</p>
+ <p>Then surface the things that silently kill venues: <strong>days since last successful audit, % of security-element limit consumed, BE certificate expiry countdown, unconfirmed invoice count</strong>, and a per-order sync badge on the handheld (drafted → sent → <em>acknowledged by station</em> → bumped) so a dropped ticket screams instead of failing silently. Add <strong>QR print validation</strong> — render and machine-scan a test receipt at setup and on every printer change.</p>
+ <div class="ev">Evidence: “Bluetooth printers continuously disconnect without a notification”; the 3-year BE expiry cliff nothing warns about; documented cases of venues issuing malformed receipts for months because of printer margins. <strong>Depends on open item #5.</strong></div>`},
+{id:'W5',tier:'t2',t:'Normativi that fill themselves from SEF',
+ c:'Auto-create goods-received from structured supplier invoices; the recipe system populates itself.',
+ b:`<p>Every inventory module in the global market dies of setup cost — “hundreds to thousands of hours”, “you can end up spending months setting it up”. Serbia hands you the fix that no international vendor can use: <strong>inbound supplier invoices arrive as structured UBL 2.1 XML through SEF, with a free public API and a demo environment</strong>, and e-otpremnica makes delivery notes structured too.</p>
+ <p>Auto-create goods-received from SEF documents, reconcile against fiscalized sales, and the normativ system populates itself as a by-product — no operator typing. Import existing paper/Excel normativi rather than asking for re-entry; venues already maintain them for inspection. Counting must be phone-native, multi-person parallel, offline-tolerant, under 15 minutes.</p>
+ <div class="ev">Evidence: the setup-cost abandonment pattern across MarketMan, Craftable, Apicbase, SpotOn; Supy praised precisely for parallel mobile counting while MarketMan's “very poor smartphone app forces us to use laptops”. <strong>Depends on open items #1 and #10.</strong></div>`},
+{id:'W6',tier:'t2',t:'The bookkeeper bridge',
+ c:'Push daily sales into Minimax; pull supplier invoices from SEF. Kill the re-keying.',
+ b:`<p>Today the flow is monthly PDFs and paper carried to a knjigovođa who re-keys them. Minimax (Saop) publishes a <strong>free REST API</strong> and actively invites integrations. Push daily sales summaries in, pull supplier invoices from SEF, emit e-otpremnica-ready records.</p>
+ <p>Low-glamour, high-retention — and it makes the owner's accountant your advocate. In this market the accountant <em>is</em> a distribution channel.</p>
+ <div class="ev">Evidence: POS↔bank↔accounting reconciliation ranks #1 globally in the only quantitative study; since 1 Jan 2026 SEF auto-prepares a preliminary VAT return from its own data, which raises the value of clean structured input.</div>`},
+{id:'W7',tier:'t2',t:'Staff-control on peer-cohort thresholds',
+ c:'Voids, comps, transfers, discounts and cash share per waiter, compared against cohort and history.',
+ b:`<p>Owners will pay for a system that stops staff leakage, and the academic support is solid. Pierce, Snow &amp; McAfee (<em>Management Science</em>, 2015) ran a difference-in-differences across <strong>392 restaurant locations</strong> and found significant reductions in theft and improvements in productivity, driven <strong>primarily by changed worker behaviour rather than turnover</strong> — with gains flowing to both the firm and workers' legitimate tip earnings.</p>
+ <p>Design reference is Avero: flag voids, comps, check and item transfers, promo misuse and <strong>cash-payment share per tipped worker</strong>, compared against <strong>peer-set and historical thresholds over a rolling window</strong> rather than firing on isolated events. Make it visible and fair — staff see their own numbers — and you capture the deterrence upside without the morale cost.</p>
+ <p><strong>Be honest about the boundary:</strong> POS analytics catches manipulation of <em>recorded</em> transactions. It cannot see the unrecorded round. That eventually needs a physical signal — pour spouts, grinder shot counters, keg flow — reconciled against the POS, which is also a defensible hardware+data moat later.</p>
+ <div class="ev">Evidence: Toast's live theft vector (“voiding items returns the item to stock, creating a vicious cycle”); the owner/waiter leakage asymmetry documented by Forbes Srbija. <strong>Depends on open item #11.</strong></div>`},
+{id:'W8',tier:'t2',t:'Channel-margin truth',
+ c:'Order fired ↔ aggregator record ↔ bank payout ↔ fiscal receipt, per-order, with commission attributed.',
+ b:`<p><strong>Nothing in the market does this.</strong> Deliverect, Otter and Chowly all do order injection; none claim payout reconciliation. And the grievance is on the public record at the Serbian Competition Commission: differentiated commissions depending on whether you also work with a competitor, 12-month lock-in with 120-day notice, marketing-investment clawback.</p>
+ <p>Every Serbian vendor already charges €25–43/month for Wolt/Glovo integration — a proven willingness-to-pay signal and an obviously rentable margin pool. Push net aggregator revenue into accounting as a distinct stream, reconciled against fiscal receipts.</p>
+ <div class="ev">Evidence: EC fined Delivery Hero and Glovo €329m in June 2025; Glovo (which owns Donesi) kept Serbia while exiting Slovenia and Bosnia. <strong>Depends on open item #9.</strong></div>`},
+{id:'W9',tier:'t2',t:'Peer benchmarking — the month-12 moat',
+ c:'“Your Saturday 20:00–23:00 average check vs 40 comparable cafés within 2 km.”',
+ b:`<p>Toast has validated this at ~180,000 restaurants with weekly-updated, item-level, user-defined peer sets and k-anonymity cohort minimums. A vendor that reaches even 200–300 Belgrade venues can offer what no international vendor can.</p>
+ <p>It is the same statistical engine as W7 — <strong>one engine, two products</strong> — and it converts every new customer into product value for existing ones.</p>
+ <p><strong>Cold-start is real:</strong> worthless below cohort minimums, so it cannot launch with the product. Expect operator sensitivity about feeding competitors' benchmarks; copy Toast's k-anonymity and opt-in framing.</p>
+ <div class="ev">Evidence: revealed preference — incumbents built it, kept it, and lead with it. No survey evidence of stated demand exists.</div>`},
+{id:'W10',tier:'t3',t:'Compliant bakšiš',
+ c:'Match Cheers’ IPS-QR mechanic, then build the per-waiter ledger they skipped.',
+ b:`<p>Cheers already ships the mechanic — IPS QR straight to the waiter's personal account, no card fees, no devices, instant, 24/7. Match it; any product without it now loses the demo.</p>
+ <p>Then build the layer they skipped: <strong>per-waiter tip ledgers, pooling and split rules (point-based, which even the global scheduling leader 7shifts doesn't support), and month-end statements a waiter can actually file from.</strong></p>
+ <p>MoF opinions classify tips as <em>drugi prihodi</em> under self-assessment — the waiter personally is the taxpayer. HORES has lobbied since Feb 2023 for card tipping plus a 10%-of-revenue exemption; Croatia moved in Jan 2024 with a ~€3,360/year per-worker exemption. <strong>When Serbia legislates, the vendor holding clean per-employee records wins overnight, and the vendor pushing untracked P2P transfers has a problem.</strong></p>
+ <div class="ev">Some Serbian venues currently forbid tipping outright to avoid exposure. <strong>Get Serbian tax counsel before shipping — open item #3.</strong></div>`},
+{id:'W11',tier:'t3',t:'IPS SKENIRAJ, free, with the savings counter',
+ c:'Terminal-less instant payment, charged at zero, with the avoided acquiring fees on the dashboard.',
+ b:`<p>Ship it from day one and charge nothing. You cannot profitably take a margin on a 0.2%-capped rail as an unlicensed party, and trying would be the exact behaviour you're differentiating against.</p>
+ <p>Meanwhile every IPS payment displaces a card payment the venue <em>is</em> paying an acquirer for. Instrument it: <em>“IPS payments this month: 1,240. Estimated acquiring fees avoided: RSD 41,000.”</em> That is your renewal argument, restated monthly, for free.</p>
+ <p>Two constraints to design around: the <strong>RSD 300,000 per-transfer limit</strong> (fall back to card for banquets) and the <strong>prohibition on merchants storing payers' account numbers</strong> (don't build loyalty identity on IPS data).</p>
+ <div class="ev">NBS publishes an official QR Generator/Validator with a documented API. IPS is growing +30.8% YoY against card acceptance at +18.7%.</div>`},
+{id:'W12',tier:'t3',t:'Anti-abuse positioning, in writing',
+ c:'Month-to-month, no hardware, published prices, free data export, no guest-facing fees.',
+ b:`<p>Every item inverts a documented incumbent abuse, and all of them cost nothing to build: month-to-month with no auto-renewal and no ETF; no hardware sale, lease or daily-sales sweep; no processor lock and no penalty for using another; price changes only at a stated annual date with 90 days' notice; no guest-facing fees ever; free export of your own data on demand plus a documented public API from day one.</p>
+ <p><strong>Caveat: this is a strong weapon against the international model and a weak one against Cheers</strong>, who already price cleanly with no contract and no hidden fees. Your wedge against the local incumbent is module bundling and compliance depth, not outrage.</p>
+ <div class="ev">Evidence: Toast 12–36mo auto-renewing with full-acceleration ETF; Clover 36–48mo leases; Lightspeed's $99/mo third-party-processor penalty; Toast's withdrawn $0.99 guest fee.</div>`},
+{id:'W13',tier:'t3',t:'Support that a van would recognise',
+ c:'Serbian-language, named human, published response times, and someone who shows up.',
+ b:`<p>Support is the lowest subscore in the global category — below overall for nine of ten products — and it is <strong>the actual moat of the Serbian legacy vendors</strong>. HCP and Galeb have nationwide physical service networks. When a fiscal printer dies at 22:00 on a Friday, a van beats a chatbot.</p>
+ <p>The current Serbian winners are not the best products. They are the ones with a phone number someone answers.</p>
+ <div class="ev">Evidence: “The average answer time from them is 5 days”; “There has not been a resolution on outstanding tickets opened two years ago”; support “googling information AS I WAS SPEAKING TO THEM”.</div>`},
+{id:'W14',tier:'t3',t:'Lead with closure risk',
+ c:'“You will not get closed for 15 days” sells long before “business intelligence” does.',
+ b:`<p>2024: <strong>4,586 fiscal inspections → 2,654 temporary closures (57.9%)</strong>, with hospitality accounting for 57.2% of violators. Fines run 30,000–2,000,000 RSD. Undeclared-worker fines run 800,000–2,000,000 for a legal entity and are not tax-deductible. Fire-safety closures are 15 days first offence, 3 months on repeat, and an appeal does not suspend enforcement.</p>
+ <p>What a POS actually neutralises: a guaranteed fiscal receipt on every closed check, a complete audit trail of voids/discounts/comps/međuzbir prints, stock-vs-sales reconciliation (which is what “one beer too many behind the bar” really is), and shift records that make a labour-inspection defence trivial.</p>
+ <div class="ev">A 15-day closure on a Belgrade terrace in July is a five-figure-euro event. The software is a rounding error against it — say so.</div>`}
+];
+const list=document.getElementById('wedgeList');
+const tierName={t1:'Tier 1 · product',t2:'Tier 2 · backend',t3:'Tier 3 · positioning'};
+function render(f){
+  list.innerHTML=wedges.filter(w=>f==='all'||w.tier===f).map(w=>`
+    <details class="wedge" data-tier="${w.tier}">
+      <summary>
+        <span class="wid">${w.id}</span>
+        <span><span class="wtitle">${w.t}</span><span class="wclaim">${w.c}</span></span>
+        <span class="tier ${w.tier}">${tierName[w.tier]}</span>
+      </summary>
+      <div class="wbody">${w.b}</div>
+    </details>`).join('');
+}
+render('all');
+document.querySelectorAll('.chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed','false'));
+    c.setAttribute('aria-pressed','true');
+    render(c.dataset.filter);
+  });
+});
+</script>
+</body>
+</html>
