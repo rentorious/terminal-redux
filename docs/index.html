@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terminal Redux — Documents</title>
+<script>(function(){try{var t=localStorage.getItem('tr-theme');
+if(!t)t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<style>
+:root{
+  color-scheme:light;
+  --plane:#f9f9f7; --surface:#fcfcfb; --surface-2:#f4f3f0;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --s1:#2a78d6; --s2:#eb6834;
+  --shadow:0 1px 2px rgba(11,11,11,.04),0 6px 18px rgba(11,11,11,.05);
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --plane:#0d0d0d; --surface:#1a1a19; --surface-2:#222221;
+  --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --s1:#3987e5; --s2:#d95926;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--plane); color:var(--ink);
+  font:15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:880px;margin:0 auto;padding:0 24px 96px}
+
+#themeToggle{position:fixed;top:16px;right:16px;z-index:60;background:var(--surface);color:var(--ink-2);
+  border:1px solid var(--border);border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;cursor:pointer;box-shadow:var(--shadow)}
+#themeToggle:hover{color:var(--ink)}
+
+header{padding:76px 0 30px;border-bottom:1px solid var(--border);margin-bottom:34px}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-size:clamp(30px,4.2vw,44px);line-height:1.1;margin:10px 0 12px;letter-spacing:-0.02em;font-weight:650}
+.sub{color:var(--ink-2);max-width:70ch;font-size:16px;margin:0}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+a.doc{
+  display:flex;flex-direction:column;text-decoration:none;color:inherit;
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:22px 22px 20px;box-shadow:var(--shadow);
+  transition:border-color .15s ease, transform .15s ease;
+}
+a.doc:hover{border-color:var(--axis);transform:translateY(-2px)}
+a.doc .rule{height:3px;width:34px;border-radius:2px;background:var(--s1);margin-bottom:16px}
+a.doc.two .rule{background:var(--s2)}
+a.doc .lab{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+a.doc h2{font-size:20px;letter-spacing:-.01em;margin:7px 0 8px;font-weight:640}
+a.doc p{color:var(--ink-2);font-size:14.5px;margin:0 0 16px}
+a.doc .meta{margin-top:auto;display:flex;gap:8px;flex-wrap:wrap}
+.pill{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);color:var(--ink-2);background:var(--surface-2)}
+a.doc .go{margin-top:16px;font-size:13.5px;color:var(--s1);font-weight:600}
+a.doc.two .go{color:var(--s2)}
+
+footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:13px}
+footer a{color:var(--ink-2)}
+</style>
+</head>
+<body>
+<button id="themeToggle" type="button">Dark</button>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Terminal Redux</div>
+  <h1>Gameplan documents</h1>
+  <p class="sub">Two working documents: what the market looks like and where to attack it, and who does what for the next fourteen weeks.</p>
+</header>
+
+<div class="cards">
+
+  <a class="doc one" href="gameplan/terminalreduxbrief.html">
+    <div class="rule"></div>
+    <div class="lab">Research brief</div>
+    <h2>Where a better hospitality POS actually fits in Serbia</h2>
+    <p>Six research passes across review corpora, staff forums, Serbian regulation and competitor pricing — turned into a ranked list of openings.</p>
+    <div class="meta">
+      <span class="pill">Market &amp; pain points</span>
+      <span class="pill">7 sections</span>
+    </div>
+    <div class="go">Open brief →</div>
+  </a>
+
+  <a class="doc two" href="gameplan/terminalreduxplaybook.html">
+    <div class="rule"></div>
+    <div class="lab">Operating playbook</div>
+    <h2>Who does what, week by week</h2>
+    <p>Fourteen weeks, two people, one critical path. Filter to a single column and work down it — every task has a <em>done when</em>.</p>
+    <div class="meta">
+      <span class="pill">14-week plan</span>
+      <span class="pill">Progress tracking</span>
+    </div>
+    <div class="go">Open playbook →</div>
+  </a>
+
+</div>
+
+<footer>
+  Source: <a href="https://github.com/rentorious/terminal-redux">github.com/rentorious/terminal-redux</a>
+</footer>
+
+</div>
+
+<script>
+const tBtn=document.getElementById('themeToggle');
+const syncTheme=()=>{tBtn.textContent=document.documentElement.getAttribute('data-theme')==='dark'?'Light':'Dark';};
+syncTheme();
+tBtn.addEventListener('click',()=>{
+  const next=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  try{localStorage.setItem('tr-theme',next);}catch(e){}
+  syncTheme();
+});
+</script>
+</body>
+</html>

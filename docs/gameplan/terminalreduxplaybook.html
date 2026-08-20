@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terminal Redux — 14-Week Playbook</title>
+<script>(function(){try{var t=localStorage.getItem('tr-theme');
+if(!t)t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<style>
+:root{
+  color-scheme:light;
+  --plane:#f9f9f7; --surface:#fcfcfb; --surface-2:#f4f3f0;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --E:#2a78d6; --C:#eb6834;
+  --good:#0ca30c; --warn:#fab219; --critical:#d03b3b;
+  --shadow:0 1px 2px rgba(11,11,11,.04),0 6px 18px rgba(11,11,11,.05);
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --plane:#0d0d0d; --surface:#1a1a19; --surface-2:#222221;
+  --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --E:#3987e5; --C:#d95926;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--plane);color:var(--ink);
+  font:15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px 100px}
+header{padding:40px 0 22px}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-size:clamp(28px,3.6vw,38px);line-height:1.1;margin:10px 0 10px;letter-spacing:-.02em;font-weight:650}
+.sub{color:var(--ink-2);max-width:76ch;margin:0}
+.keyrow{display:flex;gap:14px;flex-wrap:wrap;margin-top:16px;font-size:13.5px;color:var(--ink-2)}
+.keyrow span{display:inline-flex;align-items:center;gap:7px}
+.badge{width:22px;height:22px;border-radius:6px;color:#fff;font-size:12px;font-weight:700;
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 22px}
+.bE{background:var(--E)} .bC{background:var(--C)}
+
+/* controls */
+.bar{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--plane) 93%,transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--border);margin:0 -24px 8px;padding:12px 24px 10px}
+.barrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.flab{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.chip{background:var(--surface);border:1px solid var(--border);color:var(--ink-2);border-radius:999px;
+  padding:6px 13px;font:inherit;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.chip:hover{color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--plane);border-color:var(--ink)}
+.chip[aria-pressed="true"] .badge{outline:2px solid var(--plane)}
+.spacer{flex:1}
+.wstrip{display:flex;gap:4px;overflow-x:auto;margin-top:10px;padding-bottom:2px;scrollbar-width:none}
+.wstrip::-webkit-scrollbar{display:none}
+.wstrip a{flex:0 0 auto;font-size:12.5px;text-decoration:none;color:var(--ink-2);border:1px solid var(--border);
+  background:var(--surface);border-radius:8px;padding:5px 10px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.wstrip a:hover{color:var(--ink);border-color:var(--axis)}
+.wstrip a.hasgate{border-color:color-mix(in srgb,var(--warn) 60%,var(--border))}
+
+/* views */
+.view{display:none} .view.on{display:block}
+
+/* week */
+.week{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:20px 22px 18px;box-shadow:var(--shadow);margin:16px 0}
+.whead{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.wnum{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:650}
+.wdates{font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted)}
+.wtitle{font-size:20px;margin:4px 0 0;letter-spacing:-.01em;font-weight:640}
+.wprog{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;padding-top:4px}
+.wnote{color:var(--ink-2);font-size:14.5px;max-width:82ch;margin:12px 0 0}
+.wflag{font-size:13.5px;margin:12px 0 0;padding:9px 13px;border-radius:9px;border:1px solid var(--border);max-width:none}
+.wflag b{display:inline-block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-right:8px;color:var(--muted)}
+.handoff{background:var(--surface-2)}
+.milestone{background:color-mix(in srgb,var(--good) 8%,var(--surface));border-color:color-mix(in srgb,var(--good) 35%,var(--border))}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.col{min-width:0}
+.colh{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);font-weight:650;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid var(--grid)}
+
+/* task */
+.task{display:grid;grid-template-columns:20px 1fr;gap:10px;padding:9px 0;cursor:pointer;align-items:start}
+.task input{position:absolute;opacity:0;width:0;height:0}
+.tick{width:17px;height:17px;border:1.5px solid var(--axis);border-radius:5px;margin-top:2px;
+  display:block;position:relative;transition:.12s}
+.task:hover .tick{border-color:var(--ink-2)}
+.task input:checked ~ .tick{background:var(--good);border-color:var(--good)}
+.task input:checked ~ .tick::after{content:"";position:absolute;left:5px;top:1.5px;width:4px;height:9px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.task input:focus-visible ~ .tick{outline:2px solid var(--E);outline-offset:2px}
+.tbody{min-width:0}
+.tt{display:block;font-weight:600;font-size:14.5px;letter-spacing:-.005em}
+.td{display:block;color:var(--ink-2);font-size:13.5px;margin-top:3px}
+.tdone{display:block;font-size:12.5px;color:var(--muted);margin-top:5px}
+.tdone b{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;margin-right:6px}
+.task input:checked ~ .tbody .tt{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+
+/* gate */
+.gate{margin-top:16px;border:1px solid color-mix(in srgb,var(--warn) 55%,var(--border));
+  background:color-mix(in srgb,var(--warn) 7%,var(--surface));border-radius:11px;padding:13px 16px}
+.gh{font-weight:650;font-size:14.5px;display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.gid{background:var(--ink);color:var(--plane);border-radius:6px;padding:2px 7px;font-size:11.5px;font-weight:700;letter-spacing:.03em}
+.gp,.gf{font-size:13.5px;color:var(--ink-2);margin-top:5px}
+.gp b,.gf b{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;margin-right:7px;color:var(--muted)}
+.gf b{color:var(--critical)}
+
+/* tables & generic */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);margin:16px 0}
+.tblwrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);margin:16px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-weight:620;color:var(--ink-2);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;background:var(--surface-2)}
+tr:last-child td{border-bottom:0}
+h3{font-size:16px;margin:22px 0 6px;font-weight:640}
+h3:first-child{margin-top:0}
+p{max-width:84ch}
+.rule{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--E);
+  border-radius:0 11px 11px 0;padding:14px 18px;margin:12px 0;box-shadow:var(--shadow)}
+.rule .rh{font-weight:640;font-size:14.5px;margin-bottom:5px}
+.rule p{margin:0;font-size:14px;color:var(--ink-2)}
+.cad{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:11px 0;border-bottom:1px solid var(--grid);font-size:14px}
+.cad:last-child{border-bottom:0}
+.cad .w{font-weight:640;color:var(--ink)}
+.cad .x{color:var(--ink-2)}
+footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);
+  color:var(--plane);padding:10px 18px;border-radius:999px;font-size:13.5px;transition:transform .22s;z-index:90}
+.toast.on{transform:translateX(-50%) translateY(0)}
+@media (max-width:820px){ .cols{grid-template-columns:1fr} .cad{grid-template-columns:1fr;gap:2px} }
+
+/* ---------- back to index ---------- */
+.backlink{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:13px;text-decoration:none;
+  color:var(--ink-2);background:var(--surface);border:1px solid var(--border);border-radius:999px;
+  padding:6px 13px 6px 11px;box-shadow:var(--shadow);margin-bottom:18px}
+.backlink:hover{color:var(--ink);border-color:var(--axis)}
+.backlink .arr{font-size:14px;line-height:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <a class="backlink" href="../index.html"><span class="arr" aria-hidden="true">←</span> All documents</a>
+  <div class="eyebrow">Terminal Redux · Operating playbook</div>
+  <h1>Who does what, week by week</h1>
+  <p class="sub">Fourteen weeks, two people, one critical path. Filter to your own column and work down it. Every task has a <em>done when</em>, because "in progress" is not a status.</p>
+  <div class="keyrow">
+    <span><span class="badge bE">E</span> engineer — spine, fiscal, certification</span>
+    <span><span class="badge bC">C</span> commercial / ops — admin, discovery, pilot, grants</span>
+  </div>
+</header>
+
+<div class="bar">
+  <div class="barrow">
+    <span class="flab">View</span>
+    <button class="chip vbtn" data-view="v-weeks" aria-pressed="true">Weeks</button>
+    <button class="chip vbtn" data-view="v-standing" aria-pressed="false">Standing ownership</button>
+    <button class="chip vbtn" data-view="v-rules" aria-pressed="false">Rules &amp; cadence</button>
+    <span class="spacer"></span>
+    <span class="flab">Show</span>
+    <button class="chip pbtn" data-person="all" aria-pressed="true">Both</button>
+    <button class="chip pbtn" data-person="E" aria-pressed="false"><span class="badge bE">E</span> only</button>
+    <button class="chip pbtn" data-person="C" aria-pressed="false"><span class="badge bC">C</span> only</button>
+    <button class="chip" id="copyBtn">Copy progress</button>
+    <button class="chip" id="themeToggle" type="button">Dark</button>
+  </div>
+  <div class="wstrip" id="wstrip"></div>
+</div>
+
+<div class="view on" id="v-weeks">
+
+<section class="week" id="wk0" data-week="0">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 0 <span class="wdates">~25–31 Aug</span></div>
+      <h2 class="wtitle">Unblock everything</h2>
+    </div>
+    <div class="wprog" data-week-prog="0"></div>
+  </div>
+  <p class="wnote">This is almost entirely C's week, and one phone call comes before anything else. E writes specs and starts the domain draft.</p>
+  
+  
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-0-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Attend the Innovation Fund info session (Thursdays 13:00)</span>
+    <span class="td">Ask exactly two things: does a recently-founded d.o.o. disqualify a Smart Start application, and when does the next Mini Grants call open.</span>
+    <span class="tdone"><b>Done when</b> Both answers written down.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-0-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Register the d.o.o.</span>
+    <span class="td">Gates supplier registration, the bezbednosni element, grant eligibility and every contract you will sign. Do not defer past one week even if the Fund answer is inconvenient.</span>
+    <span class="tdone"><b>Done when</b> PIB issued.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-0-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Submit supplier registration with the Poreska uprava</span>
+    <span class="td">Request sandbox access at tap.sandbox.suf.purs.gov.rs.</span>
+    <span class="tdone"><b>Done when</b> Sandbox credentials in hand.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-0-3">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Send E's two written questions to the PU</span>
+    <span class="td">Is a tablet that emits orders but never composes a fiscal invoice inside ESIR scope? Is V-PFR acceptable for brick-and-mortar hospitality? Both change the architecture; a written answer takes weeks.</span>
+    <span class="tdone"><b>Done when</b> Sent, with reference numbers logged.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-0-4">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Contact three L-PFR vendors</span>
+    <span class="td">Using E's question list: what OS does it require, how many concurrent ESIR clients can one instance serve, and at what latency per invoice.</span>
+    <span class="tdone"><b>Done when</b> Answers from at least two.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-0-5">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Buy hardware to E's spec</span>
+    <span class="td">Two cheap Android tablets in rugged cases — the kind a Serbian café would actually buy, not a flagship — one network thermal printer, one power bank. Hold the mini-PC until the L-PFR OS answer lands.</span>
+    <span class="tdone"><b>Done when</b> Tablets and printer on the desk.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-0-6">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Start the APR pull</span>
+    <span class="td">Financial statements for NACE 56.10 and 56.30. Rank by revenue and venue count.</span>
+    <span class="tdone"><b>Done when</b> In progress; finished week 1.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-0-7">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Domain and a plain landing page</span>
+    <span class="td">You will want a URL to leave behind after interviews.</span>
+    <span class="tdone"><b>Done when</b> Live.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-0-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Draft the two PU questions precisely</span>
+    <span class="td">These are the highest-value hours in the quarter. Wording matters — an ambiguous question gets an ambiguous answer six weeks later.</span>
+    <span class="tdone"><b>Done when</b> Handed to C.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-0-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Write the L-PFR vendor question list</span>
+    <span class="td">OS requirement, concurrency, per-invoice latency. Vendor docs suggest 0.5–1s serialized, which could force a second L-PFR per venue and change unit economics.</span>
+    <span class="tdone"><b>Done when</b> Handed to C.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-0-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Specify hardware exactly</span>
+    <span class="td">Model numbers, not categories. C should not be making judgement calls in a shop.</span>
+    <span class="tdone"><b>Done when</b> Handed to C.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-0-3">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Monorepo skeleton</span>
+    <span class="td">pnpm workspaces, packages/domain, packages/fiscal-core, apps/prototype.</span>
+    <span class="tdone"><b>Done when</b> Builds.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-0-4">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">@tr/domain v0 draft</span>
+    <span class="td">Event union, Allocation type, settlement invariants. In-memory, no I/O.</span>
+    <span class="tdone"><b>Done when</b> Compiles and has one passing invariant test.</span>
+  </span>
+</label>
+    </div>
+  </div>
+  
+<div class="gate">
+  <div class="gh"><span class="gid">G0</span>Grant path resolved and d.o.o. registered</div>
+  <div class="gp"><b>Pass</b> You have a yes/no on Smart Start eligibility, a date for the next Mini Grants call, and a PIB.</div>
+  <div class="gf"><b>If it fails</b> Register anyway after one week. Mini Grants is the bigger, compatible programme — do not let a €45k question delay a queue that gates everything.</div>
+</div>
+</section>
+<section class="week" id="wk1" data-week="1">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 1 <span class="wdates">1–7 Sep</span></div>
+      <h2 class="wtitle">First contact with the sandbox</h2>
+    </div>
+    <div class="wprog" data-week-prog="1"></div>
+  </div>
+  
+  <p class="wflag handoff"><b>Handoff</b> C → E: sandbox credentials. E is blocked on this.</p>
+  
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-1-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Finish the APR target list</span>
+    <span class="td">30 names with addresses, sorted into walking routes. Mix: 5 café/bar with terraces, 3 full-service, 3 multi-venue groups, 1 splav, 1 specialty coffee, 2 opened in the last year.</span>
+    <span class="tdone"><b>Done when</b> List exists and is sorted by route.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-1-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Book the first five round-1 interviews</span>
+    <span class="td">Weekday afternoons, 15:00–17:00. Never Friday, never during service. Expect roughly 1 in 3 cold walk-ins to say yes.</span>
+    <span class="tdone"><b>Done when</b> Five confirmed.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-1-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Chase the PU</span>
+    <span class="td">Sandbox access and confirmation the questions were received.</span>
+    <span class="tdone"><b>Done when</b> Both confirmed.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-1-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Sandbox first contact</span>
+    <span class="td">Get a single test receipt fiscalized end to end against the dev E-SDC. Not the real adapter — just prove the loop closes and learn the protocol's actual shape. Expect it to be fiddlier than the docs suggest.</span>
+    <span class="tdone"><b>Done when</b> One receipt through, journal returned.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-1-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">@tr/domain v0 complete</span>
+    <span class="td">Event union plus projection reducers for floor_state and the check view. In-memory.</span>
+    <span class="tdone"><b>Done when</b> Reducers pass replay-determinism test.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-1-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Prototype: order entry begins</span>
+    <span class="td">Speed screen, categories, fuzzy search across items and tables.</span>
+    <span class="tdone"><b>Done when</b> You can ring a coffee.</span>
+  </span>
+</label>
+    </div>
+  </div>
+  
+</section>
+<section class="week" id="wk2" data-week="2">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 2 <span class="wdates">8–14 Sep</span></div>
+      <h2 class="wtitle">Discovery starts; prototype takes shape</h2>
+    </div>
+    <div class="wprog" data-week-prog="2"></div>
+  </div>
+  
+  
+  
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-2-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Round-1 interviews 1–6</span>
+    <span class="td">Part 1 of the interview script only — their world, never your product. Past tense, specific incidents. Record with permission.</span>
+    <span class="tdone"><b>Done when</b> Six done, transcribed same day.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-2-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Terrace counting, venues 1–3</span>
+    <span class="td">Two hours each, fixed block of 6–10 visible tables. Record seating, first order, every re-order timestamp, bill request, departure, payment method.</span>
+    <span class="tdone"><b>Done when</b> Three sessions logged.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-2-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Hand transcripts to E</span>
+    <span class="td">Transcripts, not summaries. This is a standing commitment.</span>
+    <span class="tdone"><b>Done when</b> Delivered Friday.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-2-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Prototype: order entry done</span>
+    <span class="td">Modifiers sorted by frequency with free ones visually distinct from paid. Seat assignment that costs zero extra taps — if adding an item gets slower because seats exist, the whole seat-level design is dead and you have proved it here.</span>
+    <span class="tdone"><b>Done when</b> Latency verified under 100ms per item add.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-2-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Prototype: floor map begins</span>
+    <span class="td">Two areas — bašta ~14 tables, unutra ~8. Hardcoded layout, no editor.</span>
+    <span class="tdone"><b>Done when</b> Tables render, tap opens a check.</span>
+  </span>
+</label>
+    </div>
+  </div>
+  
+</section>
+<section class="week" id="wk3" data-week="3">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 3 <span class="wdates">15–21 Sep</span></div>
+      <h2 class="wtitle">Round 1 closes; prototype must be demoable</h2>
+    </div>
+    <div class="wprog" data-week-prog="3"></div>
+  </div>
+  <p class="wnote">The prototype is the one place E blocks C. If it slips, round 2 slips, the W1 verdict slips, and @tr/domain gets designed on weaker evidence.</p>
+  
+  <p class="wflag milestone"><b>Milestone</b> Round 1 complete → open items #9 (aggregator commissions), #10 (normativi/KEP), #11 (staff shrinkage) closed.</p>
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-3-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Round-1 interviews 7–15</span>
+    <span class="td">Same script. Ask about aggregator commissions directly — some will tell you the percentage.</span>
+    <span class="tdone"><b>Done when</b> 12–15 total completed.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-3-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Two accountant conversations</span>
+    <span class="td">Knjigovođe serving hospitality clients. Thirty minutes each closes open item #10 and shows you the month-end re-keying that W6 kills. They are also a distribution channel.</span>
+    <span class="tdone"><b>Done when</b> Both done; #10 answered.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-3-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">One tax adviser conversation</span>
+    <span class="td">Napojnice — open item #3. Before anything tipping-shaped is designed.</span>
+    <span class="tdone"><b>Done when</b> Written note on the treatment of tips.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-3-3">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Terrace counting, venues 4–6</span>
+    
+    <span class="tdone"><b>Done when</b> Six venues logged.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-3-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Prototype: floor map and ageing ramp</span>
+    <span class="td">Occupancy, party size, running total, and time since last item as an ageing colour ramp. Then move and join tables as real operations — never a $0 fake menu item.</span>
+    <span class="tdone"><b>Done when</b> Move and join both work.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-3-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Take it outside and look at it in the sun</span>
+    <span class="td">If the ageing ramp is not readable at a metre in daylight, fix that before anything else. Question 3 — the W1 kill test — depends entirely on this pixel.</span>
+    <span class="tdone"><b>Done when</b> Legible on a terrace at 15:00.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-3-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Prototype: the four payment flows</span>
+    <span class="td">Pay all · even split with N pre-filled buttons · arbitrary partial ("900 dinara i odlazi") · split by seat including one item shared across seats. Money is faked; the interaction is what is under test.</span>
+    <span class="tdone"><b>Done when</b> All four complete without a special case in the domain.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-3-3">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Dress rehearsal</span>
+    <span class="td">Run all eight interview tasks yourself on battery, outdoors. Then hand it to someone who has never seen it and watch without speaking.</span>
+    <span class="tdone"><b>Done when</b> All eight completable by a stranger.</span>
+  </span>
+</label>
+    </div>
+  </div>
+  
+<div class="gate">
+  <div class="gh"><span class="gid">G1</span>Prototype demoable</div>
+  <div class="gp"><b>Pass</b> A stranger takes a real order on it, unaided, while you say nothing.</div>
+  <div class="gf"><b>If it fails</b> Cut prototype scope. Do not extend the window — round 2 is calendar-bound.</div>
+</div>
+</section>
+<section class="week" id="wk4" data-week="4">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 4 <span class="wdates">22–28 Sep</span></div>
+      <h2 class="wtitle">The terrace data lands; the fiscal adapter starts</h2>
+    </div>
+    <div class="wprog" data-week-prog="4"></div>
+  </div>
+  
+  <p class="wflag handoff"><b>Handoff</b> E → C: the prototype tablet. Round 2 begins.</p>
+  
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-4-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Terrace counting, venues 7–10</span>
+    
+    <span class="tdone"><b>Done when</b> Ten venues, ideally two sessions each.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-4-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Compute the dataset</span>
+    <span class="td">Median dwell by daypart and band · re-orders per table-hour · gap from last consumed item to next order · table-hours per day · cash share of observed payments · rough average check.</span>
+    <span class="tdone"><b>Done when</b> A table of numbers that does not exist anywhere else in this market.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-4-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Book round 2, weighted to revisits</span>
+    <span class="td">Going back with "you told me X, here is what I built" is a far stronger pilot ask than a cold visit.</span>
+    <span class="tdone"><b>Done when</b> 10–12 booked, majority revisits.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-4-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Fiscal adapter: invoice types</span>
+    <span class="td">Promet, Avans, Kopija, Predračun, Obuka × Prodaja, Refundacija. This is the permanent artifact, not a spike.</span>
+    <span class="tdone"><b>Done when</b> All types compose and submit.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-4-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Fiscal adapter: the Serbian quirks</span>
+    <span class="td">Buyer-ID enforcement on refunds with reference to the original · payment-method collapse to gotovina for hospitality · runtime tax-table resolution with revision tracking, never stored rates.</span>
+    <span class="tdone"><b>Done when</b> Each verified against the sandbox.</span>
+  </span>
+</label>
+    </div>
+  </div>
+  
+<div class="gate">
+  <div class="gh"><span class="gid">G2</span>Terrace data supports W1</div>
+  <div class="gp"><b>Pass</b> Median gap between last consumed item and next order is roughly 15 minutes or more.</div>
+  <div class="gf"><b>If it fails</b> W1's premise is weak. Re-rank the wedges before the spine gets designed around it — this is exactly why C gathered the data while E was building.</div>
+</div>
+</section>
+<section class="week" id="wk5" data-week="5">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 5 <span class="wdates">29 Sep–5 Oct</span></div>
+      <h2 class="wtitle">Round 2 runs; QR validation</h2>
+    </div>
+    <div class="wprog" data-week-prog="5"></div>
+  </div>
+  <p class="wnote">E attends two of this week's sessions. Watching hands is not transferable via a transcript.</p>
+  
+  
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-5-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Round-2 sessions 1–6</span>
+    <span class="td">Full task battery in the same order every time. Stopwatch on task 1 (first round) and task 5 (four-way split) so twelve sessions produce comparable numbers.</span>
+    <span class="tdone"><b>Done when</b> Six done with timings recorded.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-5-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Attend two round-2 sessions</span>
+    <span class="td">Say nothing while they work. Every hesitation is data; every question they ask you is a design defect.</span>
+    <span class="tdone"><b>Done when</b> Two attended.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-5-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Fiscal adapter: journal rendering and print</span>
+    <span class="td">The PFR returns the receipt body rendered — you print it as-is. You do not own receipt layout.</span>
+    <span class="tdone"><b>Done when</b> Prints correctly on the real thermal printer.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-5-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">QR print validation</span>
+    <span class="td">Render a test receipt, machine-scan it, verify 40–50mm square and no clipped edges. The #1 documented field defect, and nobody in the market validates it. Ship it as a setup routine and on every printer change.</span>
+    <span class="tdone"><b>Done when</b> Scans reliably off real paper.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-5-3">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">@tr/domain work begins in earnest</span>
+    <span class="td">Informed by round-1 transcripts.</span>
+    
+  </span>
+</label>
+    </div>
+  </div>
+  
+</section>
+<section class="week" id="wk6" data-week="6">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 6 <span class="wdates">6–12 Oct</span></div>
+      <h2 class="wtitle">Both big risks retire in the same week</h2>
+    </div>
+    <div class="wprog" data-week-prog="6"></div>
+  </div>
+  
+  
+  
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-6-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Round-2 sessions 7–12 (E attends two)</span>
+    
+    <span class="tdone"><b>Done when</b> Twelve total.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-6-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Synthesis</span>
+    <span class="td">Re-ranked wedge list with unprompted-mention counts · the terrace dataset · a pricing reality table of what each venue actually pays today all-in · a vocabulary list for UI copy.</span>
+    <span class="tdone"><b>Done when</b> Four artifacts written up.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-6-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Update the open-items list</span>
+    <span class="td">#7, #8, #9, #10, #11 should be closed or materially narrowed. That was the point of the round.</span>
+    <span class="tdone"><b>Done when</b> List updated with evidence.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-6-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Attend two round-2 sessions</span>
+    
+    <span class="tdone"><b>Done when</b> Four attended in total across weeks 5–6.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-6-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Fiscal adapter: 17/17</span>
+    <span class="td">Every approval-report check passing in the sandbox.</span>
+    <span class="tdone"><b>Done when</b> Green.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-6-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">FiscalHealth surface</span>
+    <span class="td">reachable and willing as separate booleans · SE limit consumed · days since successful audit · certificate expiry countdown · unconfirmed invoice count · clock skew. Nobody in the market distinguishes "no internet" from "the security element will not sign".</span>
+    <span class="tdone"><b>Done when</b> All fields populated from a live sandbox device.</span>
+  </span>
+</label>
+    </div>
+  </div>
+  
+<div class="gate">
+  <div class="gh"><span class="gid">G3</span>W1 validated with operators</div>
+  <div class="gp"><b>Pass</b> Across 12 tablet sessions: ≥6 read the ageing indicator correctly and unprompted · ≥4 ask "when can I have this" without invitation · ≥8 attempt the rain-move rather than assuming it is impossible.</div>
+  <div class="gf"><b>If it fails</b> A polite "da, dobro je" is a fail. Re-rank against whatever they did react to — most likely arbitrary partial payment, the most viscerally broken thing in every competing product.</div>
+</div>
+<div class="gate">
+  <div class="gh"><span class="gid">G4</span>Fiscal risk retired</div>
+  <div class="gp"><b>Pass</b> 17 of 17 approval checks green, and a machine-scannable QR off real thermal paper.</div>
+  <div class="gf"><b>If it fails</b> If not clear by week 8: license a third-party L-PFR, certify only the ESIR, accept the €3–6/venue/month leak, keep moving. This is a real fallback, not a failure.</div>
+</div>
+<div class="gate">
+  <div class="gh"><span class="gid">G5</span>Tablet-scope answer received</div>
+  <div class="gp"><b>Pass</b> PU confirms a tablet that never composes a fiscal invoice sits outside ESIR scope.</div>
+  <div class="gf"><b>If it fails</b> Design the thin certified relay shell now. Survivable if caught here, fatal if caught in month six.</div>
+</div>
+</section>
+<section class="week" id="wk7" data-week="7">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 7 <span class="wdates">13–19 Oct</span></div>
+      <h2 class="wtitle">HORES congress — 11–13 October, Belgrade Fair</h2>
+    </div>
+    <div class="wprog" data-week-prog="7"></div>
+  </div>
+  <p class="wnote">Both attend. You will not have a product; go anyway. It is the densest concentration of your buyers in the calendar and it lands mid-plan by luck.</p>
+  
+  
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-7-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Congress prep and execution</span>
+    <span class="td">Identify which multi-venue operators from the APR list will be there and who to corner. Prototype on a tablet. No promises about dates.</span>
+    <span class="tdone"><b>Done when</b> Named conversations with at least three group operators.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-7-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Mini Grants application drafting begins</span>
+    <span class="td">~€120k at 70% co-financing. The paperwork is not trivial and these windows are short.</span>
+    <span class="tdone"><b>Done when</b> First draft.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-7-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Attend the congress</span>
+    <span class="td">Not as a salesperson. Watch how operators talk to each other about their systems.</span>
+    <span class="tdone"><b>Done when</b> Attended.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-7-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">@tr/domain continues around the congress</span>
+    
+    
+  </span>
+</label>
+    </div>
+  </div>
+  
+</section>
+<section class="week" id="wk8" data-week="8">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 8 <span class="wdates">20–26 Oct</span></div>
+      <h2 class="wtitle">The spine becomes real</h2>
+    </div>
+    <div class="wprog" data-week-prog="8"></div>
+  </div>
+  <p class="wnote">Highest-leverage block in the plan. Single author. C stays out of it; E stays out of everything else.</p>
+  
+  <p class="wflag milestone"><b>Milestone</b> @tr/domain complete → the contract that everything downstream builds against.</p>
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-8-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Pilot candidate ranking</span>
+    <span class="td">Optimise for learning per week and for the reference being credible to the next customer. 20–40 covers with a real terrace · an owner who was specific and critical rather than enthusiastic · has switched POS before · walking distance from you.</span>
+    <span class="tdone"><b>Done when</b> Ranked shortlist of five.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-8-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Mini Grants application</span>
+    
+    <span class="tdone"><b>Done when</b> Ready to submit when the call opens.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-8-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">@tr/domain final</span>
+    <span class="td">Event union finalised against what the prototype proved the floor actually does. Allocation and the settlement invariants including the rounding-remainder rule. Projection reducers.</span>
+    <span class="tdone"><b>Done when</b> Feature complete.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-8-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Property-based tests on the three invariants that matter</span>
+    <span class="td">Sum of fiscalized settlements never exceeds check total · a fiscalized settlement can never be cancelled · replaying a log always yields an identical projection.</span>
+    <span class="tdone"><b>Done when</b> All three pass under property testing.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-8-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Write down every place the vocabulary did not fit</span>
+    <span class="td">The moments in the prototype where you reached for a special case. Each one is a bug in the spine caught before the spine exists.</span>
+    <span class="tdone"><b>Done when</b> List written, each item resolved or explicitly accepted.</span>
+  </span>
+</label>
+    </div>
+  </div>
+  
+</section>
+<section class="week" id="wk9" data-week="9">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 9 <span class="wdates">27 Oct–2 Nov</span></div>
+      <h2 class="wtitle">Hub</h2>
+    </div>
+    <div class="wprog" data-week-prog="9"></div>
+  </div>
+  
+  
+  
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-9-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Pilot shortlist down to three</span>
+    <span class="td">Begin close conversations. Terms: free six months, both founders on site week one, named reference, permission to publish anonymised operating metrics.</span>
+    <span class="tdone"><b>Done when</b> Three in active conversation.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-9-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Second-pilot pipeline</span>
+    <span class="td">A December pilot is a low-load pilot. The terrace thesis only gets stress-tested from April — have venue #2 identified now.</span>
+    <span class="tdone"><b>Done when</b> Two candidates for April.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-9-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Hub service</span>
+    <span class="td">Venue event log, settlement lease manager, time authority, printer and KDS routing.</span>
+    <span class="tdone"><b>Done when</b> Leases prevent double settlement under a concurrent test.</span>
+  </span>
+</label>
+    </div>
+  </div>
+  
+</section>
+<section class="week" id="wk10" data-week="10">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 10 <span class="wdates">3–9 Nov</span></div>
+      <h2 class="wtitle">You have a POS</h2>
+    </div>
+    <div class="wprog" data-week-prog="10"></div>
+  </div>
+  
+  
+  
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-10-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Submit Mini Grants if the call is open</span>
+    
+    <span class="tdone"><b>Done when</b> Submitted or dated for the next window.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-10-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Pilot close conversations continue</span>
+    
+    <span class="tdone"><b>Done when</b> One venue verbally committed.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-10-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Sync protocol</span>
+    <span class="td">Resumable WebSocket by (deviceId, deviceSeq). Append-union for orders — they are commutative, so two waiters on table 7 do not conflict. Lease for settlement.</span>
+    <span class="tdone"><b>Done when</b> Two devices converge after a partition.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-10-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Device app, three shells</span>
+    <span class="td">Capacitor with local SQLite: waiter, counter, KDS.</span>
+    <span class="tdone"><b>Done when</b> All three run on real hardware.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-10-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Minimal cloud plane</span>
+    <span class="td">Event ingestion, Postgres with row-level security by org, one back-office view.</span>
+    <span class="tdone"><b>Done when</b> Events land and a projection rebuilds.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-10-3">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Run the failure drills for real</span>
+    <span class="td">Pull the hub's power mid-service. Pull a tablet's Wi-Fi mid-order. Unplug the printer between fire and acknowledgement. Set a device clock five minutes fast. Reasoning about these is not the same as doing them.</span>
+    <span class="tdone"><b>Done when</b> All four survived, with the right message on screen each time.</span>
+  </span>
+</label>
+    </div>
+  </div>
+  
+<div class="gate">
+  <div class="gh"><span class="gid">G6</span>Vertical slice works</div>
+  <div class="gp"><b>Pass</b> A waiter takes an order on a tablet with Wi-Fi off, reconnects, settles, and a compliant fiscal receipt prints.</div>
+  <div class="gf"><b>If it fails</b> Cut back-office scope. Never cut spine scope. Slipping here slips everything after it.</div>
+</div>
+</section>
+<section class="week" id="wk11" data-week="11">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 11 <span class="wdates">10–16 Nov</span></div>
+      <h2 class="wtitle">Submit</h2>
+    </div>
+    <div class="wprog" data-week-prog="11"></div>
+  </div>
+  
+  
+  <p class="wflag milestone"><b>Milestone</b> ESIR (+L-PFR) submitted → the 15-day statutory clock starts. Expect iteration rounds.</p>
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-11-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Close the pilot in writing</span>
+    <span class="td">Brief, but written: dates, terms, what you owe them, what they owe you.</span>
+    <span class="tdone"><b>Done when</b> Signed.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-11-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Submit for ESIR approval</span>
+    <span class="td">And L-PFR if you are certifying your own. Field reports describe multiple rounds of resubmitted test receipts — do not plan around a first-pass approval.</span>
+    <span class="tdone"><b>Done when</b> Submitted, reference logged.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-11-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Back office begins</span>
+    <span class="td">The manager's fiscal-health screen first — it is W4 and it demos beautifully.</span>
+    <span class="tdone"><b>Done when</b> Screen exists.</span>
+  </span>
+</label>
+    </div>
+  </div>
+  
+</section>
+<section class="week" id="wk12" data-week="12">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 12 <span class="wdates">17–23 Nov</span></div>
+      <h2 class="wtitle">Pilot prep</h2>
+    </div>
+    <div class="wprog" data-week-prog="12"></div>
+  </div>
+  
+  
+  
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-12-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Pilot onboarding prep</span>
+    <span class="td">Menu build, staff scheduling around training, expectation setting with the owner. Be explicit that week one will have problems and that you will be standing there when they happen.</span>
+    <span class="tdone"><b>Done when</b> Menu loaded, staff briefed, dates fixed.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-12-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Back office: shift report and daily sales</span>
+    
+    <span class="tdone"><b>Done when</b> Both produce numbers that reconcile.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-12-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Certification iteration</span>
+    <span class="td">Respond to whatever comes back. This is what the recovered calendar was saved for.</span>
+    
+  </span>
+</label>
+    </div>
+  </div>
+  
+<div class="gate">
+  <div class="gh"><span class="gid">G7</span>Pilot committed</div>
+  <div class="gp"><b>Pass</b> A named venue has agreed in writing, with a start date.</div>
+  <div class="gf"><b>If it fails</b> Return to the interview cohort. Do not launch unpiloted — an unpiloted product meeting real service is how you burn your first reference.</div>
+</div>
+</section>
+<section class="week" id="wk13" data-week="13">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 13 <span class="wdates">24–30 Nov</span></div>
+      <h2 class="wtitle">Final prep</h2>
+    </div>
+    <div class="wprog" data-week-prog="13"></div>
+  </div>
+  
+  
+  
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-13-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Pilot final prep and reference plan</span>
+    <span class="td">What you will publish, what they have agreed to, what metrics you will capture.</span>
+    <span class="tdone"><b>Done when</b> Agreed with the owner.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-13-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Raw event export</span>
+    <span class="td">CSV/Parquet on demand, no paywall. Free data export is a positioning weapon against every incumbent and costs you nothing, because the log already exists.</span>
+    <span class="tdone"><b>Done when</b> Works.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-13-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Instrument the raise metrics as projections</span>
+    <span class="td">Venues live · devices active · checks per day · GMV fiscalized · IPS share of tenders · table-hours served · cohort retention · corpus size. When a partner asks in month nine, the answer should be a query, not a spreadsheet.</span>
+    <span class="tdone"><b>Done when</b> All queryable.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-13-2">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Certification iteration continues</span>
+    
+    
+  </span>
+</label>
+    </div>
+  </div>
+  
+</section>
+<section class="week" id="wk14" data-week="14">
+  <div class="whead">
+    <div>
+      <div class="wnum">Week 14 <span class="wdates">1–7 Dec</span></div>
+      <h2 class="wtitle">Pilot goes live</h2>
+    </div>
+    <div class="wprog" data-week-prog="14"></div>
+  </div>
+  <p class="wnote">Both of you on site for the venue's entire first week of service. Not on call — present. This is where you learn the twenty things no interview surfaces, and it is the reference that unlocks the next ten venues.</p>
+  
+  <p class="wflag milestone"><b>Milestone</b> First reference, first real data, first corpus.</p>
+  <div class="cols">
+    <div class="col" data-col="C">
+      <div class="colh"><span class="badge bC">C</span> commercial / ops</div>
+      
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-14-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">On site, every service</span>
+    <span class="td">Watch the staff, not the screen. Note every time someone hesitates, asks a colleague, or works around something.</span>
+    <span class="tdone"><b>Done when</b> Seven services observed.</span>
+  </span>
+</label>
+<label class="task" data-who="C">
+  <input type="checkbox" data-key="C-14-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Owner check-in at day 3 and day 7</span>
+    <span class="td">Ask what they would tell another owner. That sentence is your next sales pitch, whatever it is.</span>
+    <span class="tdone"><b>Done when</b> Both done, verbatim recorded.</span>
+  </span>
+</label>
+    </div>
+    <div class="col" data-col="E">
+      <div class="colh"><span class="badge bE">E</span> engineer</div>
+      
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-14-0">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">On site, every service</span>
+    <span class="td">Fix nothing during service unless it is blocking. Write it down, fix it overnight, deploy before open.</span>
+    <span class="tdone"><b>Done when</b> Seven services survived.</span>
+  </span>
+</label>
+<label class="task" data-who="E">
+  <input type="checkbox" data-key="E-14-1">
+  <span class="tick" aria-hidden="true"></span>
+  <span class="tbody">
+    <span class="tt">Nightly fix-and-deploy cycle</span>
+    <span class="td">This is the fastest feedback loop you will ever have on this product. Use it.</span>
+    
+  </span>
+</label>
+    </div>
+  </div>
+  
+</section>
+</div>
+
+<div class="view" id="v-standing">
+  <div class="card">
+    <h3>Standing ownership</h3>
+    <p style="color:var(--ink-2);font-size:14.5px">This does not change week to week. If something isn't on this list and isn't in a week, it has no owner — which is how things get dropped.</p>
+  </div>
+  <div class="tblwrap"><table>
+    <thead><tr><th style="width:70px">Owner</th><th style="width:270px">Area</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr data-who="C"><td><span class="badge bC" style="">C</span></td><td><strong>Company &amp; regulatory admin</strong></td><td>d.o.o., supplier registration, bezbednosni element, all filings and renewals. Owns the calendar of anything with a government deadline.</td></tr><tr data-who="C"><td><span class="badge bC" style="">C</span></td><td><strong>PU correspondence — sending &amp; chasing</strong></td><td>E drafts the technical wording; C sends, logs reference numbers, and phones when nothing comes back. Government correspondence needs someone who will chase it.</td></tr><tr data-who="C"><td><span class="badge bC" style="">C</span></td><td><strong>Vendor &amp; partner relationships</strong></td><td>L-PFR vendors, printer suppliers, acquirers later. E supplies the questions, C works the relationship.</td></tr><tr data-who="C"><td><span class="badge bC" style="">C</span></td><td><strong>Discovery &amp; customer research</strong></td><td>APR target list, interview round 1, terrace counting, synthesis. Owns the evidence base.</td></tr><tr data-who="C"><td><span class="badge bC" style="">C</span></td><td><strong>Pilot recruitment &amp; account management</strong></td><td>Shortlist, close, written terms, onboarding prep, reference management.</td></tr><tr data-who="C"><td><span class="badge bC" style="">C</span></td><td><strong>Grants &amp; non-dilutive funding</strong></td><td>Mini Grants (~€120k) and any successor calls. Real hours, real money.</td></tr><tr data-who="C"><td><span class="badge bC" style="">C</span></td><td><strong>Raise narrative</strong></td><td>Drafts the story; E supplies the numbers from projections, never from a hand-maintained spreadsheet.</td></tr><tr data-who="E"><td><span class="badge bE" style="">E</span></td><td><strong>Certification &amp; the fiscal element</strong></td><td>Sandbox, fiscal adapter, submission, iteration rounds. Owns the slow, versioned, regulator-facing artifact and its release discipline.</td></tr><tr data-who="E"><td><span class="badge bE" style="">E</span></td><td><strong>@tr/domain</strong></td><td>Event vocabulary, Allocation, settlement invariants, projection reducers. Single author. This is the contract between everything else.</td></tr><tr data-who="E"><td><span class="badge bE" style="">E</span></td><td><strong>Hub, sync, device apps</strong></td><td>Venue event log, settlement leases, sync protocol, Capacitor shells, cloud plane.</td></tr><tr data-who="E"><td><span class="badge bE" style="">E</span></td><td><strong>Technical specification of anything C buys or asks</strong></td><td>Hardware specs, vendor question lists, PU question wording.</td></tr><tr data-who="Both"><td><span class="badge bE" style="background:linear-gradient(135deg,var(--E) 50%,var(--C) 50%);width:auto;padding:0 7px;border-radius:6px">E+C</span></td><td><strong>Interview round 2</strong></td><td>C leads and runs the sessions. E attends at least four — non-negotiable, see Rules.</td></tr><tr data-who="Both"><td><span class="badge bE" style="background:linear-gradient(135deg,var(--E) 50%,var(--C) 50%);width:auto;padding:0 7px;border-radius:6px">E+C</span></td><td><strong>HORES congress and the pilot week</strong></td><td>Both physically present. Neither is delegable.</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="view" id="v-rules">
+  <div class="card">
+    <h3>Operating cadence</h3>
+    <div class="cad"><div class="w">Monday, 30 min</div><div class="x">Gate status · blockers · what each of you needs from the other this week. Nothing else. If it takes longer than 30 minutes something is wrong upstream.</div></div><div class="cad"><div class="w">Friday, 15 min</div><div class="x">What shipped, what slipped, and C hands over the week's transcripts. E confirms they have been read, not skimmed.</div></div><div class="cad"><div class="w">Continuous</div><div class="x">One shared open-items list — the twelve research unknowns plus anything new — each with an owner and a status. It is the only document that is allowed to grow.</div></div><div class="cad"><div class="w">End of each gate week</div><div class="x">Write the gate verdict down before discussing it. After ten conversations you will be able to hear whatever you want to hear.</div></div>
+  </div>
+  <h3 style="margin-left:2px">Rules of engagement — the six ways this split goes wrong</h3>
+  <div class="rule"><div class="rh">1. E must not lose contact with users</div><p>The most common failure when a commercial co-founder owns discovery. Written summaries do not carry the information you need — watching a waiter's hands hesitate does. E attends ≥4 round-2 sessions and the entire pilot week, and reads round-1 transcripts rather than C's summaries of them.</p></div><div class="rule"><div class="rh">2. C must not sell what does not exist</div><p>No delivery dates promised before certification is submitted. No feature described as existing unless it is on the tablet in C's hand at that moment. A missed date costs you the reference, and the reference is the point of the pilot.</p></div><div class="rule"><div class="rh">3. The prototype must stay throwaway</div><p>C will want to show it to everyone, which is mostly good. Open every showing with "ovo je prototip, pola ovoga je lažno." Keep the dated delete note in the README. It goes in the bin after week 6; only @tr/domain survives.</p></div><div class="rule"><div class="rh">4. Interview quality must not drift</div><p>Round 1 is script-driven and recorded. Round 2 uses the same task battery in the same order with a stopwatch, so twelve sessions produce comparable numbers rather than twelve impressions.</p></div><div class="rule"><div class="rh">5. E's calendar is protected</div><p>Everything except the prototype, the fiscal adapter, the spine, four interviews and the pilot week routes to C. If E is chasing a government email, the split has failed.</p></div><div class="rule"><div class="rh">6. Settle roles and equity before you take money</div><p>Two founders — technical plus commercial — in a regulated vertical is a materially easier seed story than one. But only if the split is documented. Do it while it is still easy.</p></div>
+</div>
+
+<footer>
+  Terminal Redux operating playbook · generated 20 August 2026 from <code>playbook-data.js</code>.
+  Checkbox state is held in memory only and resets when you reload — use <strong>Copy progress</strong> to export it as Markdown into whatever you actually track work in.
+</footer>
+</div>
+<div class="toast" id="toast">Copied</div>
+
+<script>
+const WEEKDATA = [{"n":0,"label":"Week 0","title":"Unblock everything","gate":true,"C":["Attend the Innovation Fund info session (Thursdays 13:00)","Register the d.o.o.","Submit supplier registration with the Poreska uprava","Send E's two written questions to the PU","Contact three L-PFR vendors","Buy hardware to E's spec","Start the APR pull","Domain and a plain landing page"],"E":["Draft the two PU questions precisely","Write the L-PFR vendor question list","Specify hardware exactly","Monorepo skeleton","@tr/domain v0 draft"]},{"n":1,"label":"Week 1","title":"First contact with the sandbox","gate":false,"C":["Finish the APR target list","Book the first five round-1 interviews","Chase the PU"],"E":["Sandbox first contact","@tr/domain v0 complete","Prototype: order entry begins"]},{"n":2,"label":"Week 2","title":"Discovery starts; prototype takes shape","gate":false,"C":["Round-1 interviews 1–6","Terrace counting, venues 1–3","Hand transcripts to E"],"E":["Prototype: order entry done","Prototype: floor map begins"]},{"n":3,"label":"Week 3","title":"Round 1 closes; prototype must be demoable","gate":true,"C":["Round-1 interviews 7–15","Two accountant conversations","One tax adviser conversation","Terrace counting, venues 4–6"],"E":["Prototype: floor map and ageing ramp","Take it outside and look at it in the sun","Prototype: the four payment flows","Dress rehearsal"]},{"n":4,"label":"Week 4","title":"The terrace data lands; the fiscal adapter starts","gate":true,"C":["Terrace counting, venues 7–10","Compute the dataset","Book round 2, weighted to revisits"],"E":["Fiscal adapter: invoice types","Fiscal adapter: the Serbian quirks"]},{"n":5,"label":"Week 5","title":"Round 2 runs; QR validation","gate":false,"C":["Round-2 sessions 1–6"],"E":["Attend two round-2 sessions","Fiscal adapter: journal rendering and print","QR print validation","@tr/domain work begins in earnest"]},{"n":6,"label":"Week 6","title":"Both big risks retire in the same week","gate":true,"C":["Round-2 sessions 7–12 (E attends two)","Synthesis","Update the open-items list"],"E":["Attend two round-2 sessions","Fiscal adapter: 17/17","FiscalHealth surface"]},{"n":7,"label":"Week 7","title":"HORES congress — 11–13 October, Belgrade Fair","gate":false,"C":["Congress prep and execution","Mini Grants application drafting begins"],"E":["Attend the congress","@tr/domain continues around the congress"]},{"n":8,"label":"Week 8","title":"The spine becomes real","gate":false,"C":["Pilot candidate ranking","Mini Grants application"],"E":["@tr/domain final","Property-based tests on the three invariants that matter","Write down every place the vocabulary did not fit"]},{"n":9,"label":"Week 9","title":"Hub","gate":false,"C":["Pilot shortlist down to three","Second-pilot pipeline"],"E":["Hub service"]},{"n":10,"label":"Week 10","title":"You have a POS","gate":true,"C":["Submit Mini Grants if the call is open","Pilot close conversations continue"],"E":["Sync protocol","Device app, three shells","Minimal cloud plane","Run the failure drills for real"]},{"n":11,"label":"Week 11","title":"Submit","gate":false,"C":["Close the pilot in writing"],"E":["Submit for ESIR approval","Back office begins"]},{"n":12,"label":"Week 12","title":"Pilot prep","gate":true,"C":["Pilot onboarding prep"],"E":["Back office: shift report and daily sales","Certification iteration"]},{"n":13,"label":"Week 13","title":"Final prep","gate":false,"C":["Pilot final prep and reference plan"],"E":["Raw event export","Instrument the raise metrics as projections","Certification iteration continues"]},{"n":14,"label":"Week 14","title":"Pilot goes live","gate":false,"C":["On site, every service","Owner check-in at day 3 and day 7"],"E":["On site, every service","Nightly fix-and-deploy cycle"]}];
+
+/* ---------- theme ---------- */
+const tBtn=document.getElementById('themeToggle');
+const syncTheme=()=>{tBtn.textContent=document.documentElement.getAttribute('data-theme')==='dark'?'Light':'Dark';};
+syncTheme();
+tBtn.addEventListener('click',()=>{
+  const next=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  try{localStorage.setItem('tr-theme',next);}catch(e){}
+  syncTheme();
+});
+
+/* week strip */
+document.getElementById('wstrip').innerHTML = WEEKDATA.map(w =>
+  '<a href="#wk'+w.n+'" class="'+(w.gate?'hasgate':'')+'">'+w.label.replace('Week ','W')+(w.gate?' •':'')+'</a>').join('');
+
+/* views */
+document.querySelectorAll('.vbtn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.vbtn').forEach(x=>x.setAttribute('aria-pressed','false'));
+  b.setAttribute('aria-pressed','true');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById(b.dataset.view).classList.add('on');
+  document.getElementById('wstrip').style.display = b.dataset.view==='v-weeks' ? '' : 'none';
+  scrollTo({top:0,behavior:'smooth'});
+});
+
+/* person filter */
+let person='all';
+document.querySelectorAll('.pbtn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.pbtn').forEach(x=>x.setAttribute('aria-pressed','false'));
+  b.setAttribute('aria-pressed','true'); person=b.dataset.person; applyFilter();
+});
+function applyFilter(){
+  document.querySelectorAll('.col').forEach(c=>{
+    c.style.display = (person==='all'||c.dataset.col===person) ? '' : 'none';
+  });
+  document.querySelectorAll('.cols').forEach(c=>{
+    c.style.gridTemplateColumns = person==='all' ? '' : '1fr';
+  });
+  document.querySelectorAll('#v-standing tbody tr').forEach(r=>{
+    r.style.display = (person==='all'||r.dataset.who===person||r.dataset.who==='Both') ? '' : 'none';
+  });
+}
+
+/* progress */
+function updateProgress(){
+  document.querySelectorAll('.week').forEach(w=>{
+    const boxes=[...w.querySelectorAll('.col')].filter(c=>c.style.display!=='none')
+      .flatMap(c=>[...c.querySelectorAll('input')]);
+    const done=boxes.filter(b=>b.checked).length;
+    w.querySelector('.wprog').textContent = boxes.length ? done+' / '+boxes.length : '';
+  });
+}
+document.addEventListener('change',e=>{ if(e.target.matches('.task input')) updateProgress(); });
+const _af=applyFilter; applyFilter=()=>{_af();updateProgress();};
+updateProgress();
+
+/* copy progress */
+document.getElementById('copyBtn').onclick=async()=>{
+  let out='# Terminal Redux playbook — progress\n\n';
+  WEEKDATA.forEach(w=>{
+    let lines=[];
+    ['C','E'].forEach(who=>{
+      if(person!=='all'&&person!==who) return;
+      w[who].forEach((t,i)=>{
+        const box=document.querySelector('[data-key="'+who+'-'+w.n+'-'+i+'"]');
+        lines.push('- ['+(box&&box.checked?'x':' ')+'] **'+who+'** '+t);
+      });
+    });
+    if(lines.length){ out+='## '+w.label+' — '+w.title+'\n'+lines.join('\n')+'\n\n'; }
+  });
+  try{ await navigator.clipboard.writeText(out); }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=out; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  const t=document.getElementById('toast'); t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),1600);
+};
+</script>
+</body>
+</html>
