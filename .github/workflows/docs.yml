@@ -1,0 +1,43 @@
+# Rebuilds docs/*.html whenever a markdown source changes on main, so editing a
+# .md (locally or straight on github.com) is enough to update the published site.
+name: Build docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**/*.md'
+      - 'docs/assets/**'
+      - 'scripts/build-docs.mjs'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-docs
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci || npm install --no-audit --no-fund
+      - run: npm run docs
+      - name: Commit rendered pages
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain docs)" ]; then
+            git add docs
+            git commit -m "docs: rebuild rendered pages [skip ci]"
+            git push
+          else
+            echo "No changes."
+          fi

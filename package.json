@@ -1,0 +1,12 @@
+{
+  "name": "terminal-redux-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs": "node scripts/build-docs.mjs",
+    "docs:serve": "node scripts/build-docs.mjs && python3 -m http.server 8080 --directory docs"
+  },
+  "devDependencies": {
+    "marked": "^18.0.0"
+  }
+}
